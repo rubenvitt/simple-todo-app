@@ -1,0 +1,80 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# pnpm Package Manager Rule
+
+**CRITICAL**: This project uses **pnpm** exclusively. Never suggest or use other package managers.
+
+## ✅ Required Commands
+
+- **Installation**: `pnpm install`
+- **Add Dependencies**: `pnpm add <package>`
+- **Add Dev Dependencies**: `pnpm add -D <package>`
+- **Remove Dependencies**: `pnpm remove <package>`
+- **Run Scripts**: `pnpm run <script>` or `pnpm <script>`
+- **Development**: `pnpm run dev`
+- **Build**: `pnpm run build`
+- **Test**: `pnpm test`
+
+## ❌ Forbidden Commands
+
+```bash
+# Never use these:
+npm install        # Use: pnpm install
+npm i             # Use: pnpm install
+npm add           # Use: pnpm add
+npm run           # Use: pnpm run
+yarn              # Use: pnpm
+yarn add          # Use: pnpm add
+yarn install      # Use: pnpm install
+```
+
+## Detection Indicators
+
+
+- **Lockfile**: `pnpm-lock.yaml` (present in project root)
+- **Workspace**: Configured for pnpm workspaces
+- **Performance**: Faster installs, better disk efficiency
+- **Security**: Prevents phantom dependencies
+
+## Code Generation Rules
+
+- Always suggest `pnpm` commands in documentation
+- Convert any `npm`/`yarn` references to `pnpm`
+- Use `pnpm` in README examples and setup instructions
+- Reference `pnpm-lock.yaml` for dependency resolution
+
+## Error Prevention
+
+- **Auto-convert**: If user mentions npm/yarn, suggest pnpm equivalent
+- **Validate**: Check for `pnpm-lock.yaml` before suggesting commands
+- **Warn**: Alert if detecting non-pnpm usage patterns
+
+## Integration Examples
+
+```json
+// package.json scripts assume pnpm context
+{
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main"
+  }
+}
+```
+
+```bash
+# Development workflow
+pnpm install              # Install dependencies
+pnpm run start:dev        # Start development server
+pnpm prisma generate      # Generate Prisma client
+pnpm test                 # Run tests
+```
+
+## Monorepo Considerations
+
+- **Workspace Commands**: `pnpm -r <command>` for all packages
+- **Filter Commands**: `pnpm --filter <package> <command>`
+- **Shared Dependencies**: Leverages pnpm's efficient storage

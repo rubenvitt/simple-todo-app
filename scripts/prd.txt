@@ -1,0 +1,178 @@
+<context>
+# Overview  
+A comprehensive multi-user todo management application built with NestJS backend, supporting multiple lists per user with simple kanban-style task states (Todo, Doing, Done). The application solves the problem of scattered task management and enables teams to collaborate effectively on projects while maintaining individual productivity workflows. It's valuable for individual professionals, small teams, freelancers, and students who need organized, collaborative task management with real-time updates and simple state tracking.
+
+# Core Features  
+## User Management & Authentication
+- Secure user registration and login with JWT tokens - Essential for multi-user support and data security
+- User profile management and password reset - Ensures users can maintain their accounts independently
+- Account deletion with proper data cleanup - Critical for GDPR compliance and user control
+
+## Multi-User Collaboration  
+- User isolation with selective sharing capabilities - Users own their data but can collaborate when needed
+- List sharing with permission levels (owner, editor, viewer) - Enables controlled collaboration
+- User invitation system and activity tracking - Facilitates team coordination and transparency
+
+## List & Task Management
+- CRUD operations for lists with naming, descriptions, and color coding - Organizes tasks by project/category
+- Task management with Todo/Doing/Done states - Simple kanban workflow for clear progress tracking
+- Task priorities, due dates, descriptions, and assignments - Complete task lifecycle management
+- Search, filtering, and bulk operations - Efficient task discovery and management at scale
+
+## Real-time Kanban Interface
+- Three-column drag-and-drop interface - Intuitive visual task state management
+- Live updates via WebSockets for shared lists - Real-time collaboration without page refreshes
+- Responsive design for mobile and desktop - Accessible task management anywhere
+
+# User Experience  
+## User Personas
+- **Individual Professional**: Manages personal projects and work tasks across multiple categories
+- **Team Leader**: Coordinates team projects with task assignments and progress tracking  
+- **Freelancer**: Organizes client projects with separate lists and collaborative access
+- **Student**: Tracks academic tasks, group projects, and personal goals
+
+## Key User Flows
+1. **Registration & Setup**: User registers → Creates first list → Adds initial tasks → Invites collaborators
+2. **Daily Task Management**: User logs in → Reviews tasks → Moves tasks through states → Creates new tasks
+3. **Collaboration**: User shares list → Invites team members → Assigns tasks → Tracks team progress
+4. **Task Completion**: User drags task to "Done" → Reviews completed work → Archives old tasks
+
+## UI/UX Considerations
+- Clean, minimal three-column kanban layout with clear visual hierarchy
+- Drag-and-drop interactions with smooth animations and immediate feedback
+- Color-coded priorities and visual due date indicators
+- Mobile-first responsive design with touch-friendly interactions
+- Real-time collaboration indicators showing who is online and making changes
+</context>
+
+<PRD>
+# Technical Architecture  
+## System Components
+- **NestJS Backend**: RESTful API with modular architecture (Auth, Users, Lists, Tasks, Notifications modules)
+- **Database Layer**: TypeORM with SQLite (development) and PostgreSQL (production)
+- **Authentication**: JWT-based stateless authentication with refresh token support
+- **Real-time Communication**: WebSocket integration for live updates on shared lists
+- **API Documentation**: Swagger/OpenAPI for comprehensive endpoint documentation
+
+## Data Models
+- **Users**: id, email, password_hash, name, created_at, updated_at
+- **Lists**: id, name, description, color, user_id, created_at, updated_at  
+- **Tasks**: id, title, description, status (todo/doing/done), priority, due_date, list_id, assigned_user_id, created_at, updated_at
+- **List_Shares**: id, list_id, user_id, permission_level, created_at
+- **Notifications**: id, user_id, message, read_status, created_at
+
+## APIs and Integrations
+- **/auth**: POST /login, POST /register, POST /refresh-token
+- **/users**: GET /profile, PUT /profile, DELETE /account
+- **/lists**: GET /, POST /, PUT /:id, DELETE /:id, POST /:id/share
+- **/tasks**: GET /, POST /, PUT /:id, DELETE /:id, PATCH /:id/status
+- **/notifications**: GET /, PATCH /:id/read
+
+## Infrastructure Requirements
+- Node.js runtime with TypeScript compilation
+- Database with connection pooling and migration support
+- Input validation with class-validator
+- Security middleware (helmet, CORS, rate limiting)
+- Error handling and logging infrastructure
+
+# Development Roadmap  
+## Phase 1: Core Backend Foundation (MVP)
+- NestJS project setup with TypeScript configuration
+- Database schema design and TypeORM integration
+- User authentication module with JWT implementation
+- Basic CRUD operations for users, lists, and tasks
+- Input validation and error handling middleware
+- Swagger API documentation setup
+- Basic testing framework implementation
+
+## Phase 2: Task State Management & Security
+- Task state transitions (Todo → Doing → Done) with validation
+- List sharing functionality with permission system
+- User invitation and collaboration features
+- Security implementations (password hashing, input sanitization)
+- Comprehensive testing suite for all endpoints
+- API rate limiting and security headers
+
+## Phase 3: Real-time Features & Polish
+- WebSocket implementation for real-time list updates
+- Notification system for task assignments and changes
+- Activity tracking for shared lists
+- Performance optimization and caching
+- Production deployment configuration
+- Monitoring and logging implementation
+
+## Future Enhancements
+- Advanced task filtering and search capabilities
+- Task dependencies and subtask functionality
+- Time tracking and reporting features
+- Mobile application development
+- Calendar integration and external API connections
+
+# Logical Dependency Chain
+## Foundation First (Week 1)
+- Project setup and basic NestJS configuration → Essential foundation for all development
+- Database schema and TypeORM setup → Required before any data operations
+- User authentication module → Core security requirement for all user features
+
+## Core Functionality (Week 2)  
+- User CRUD operations → Enables user management
+- List CRUD operations → Foundation for task organization
+- Task CRUD operations → Core application functionality
+- Basic API documentation → Enables testing and development
+
+## State Management (Week 3)
+- Task state transitions → Core kanban functionality
+- List sharing permissions → Enables collaboration
+- Input validation → Ensures data integrity and security
+
+## Collaboration Features (Week 4)
+- User invitation system → Facilitates team formation
+- Real-time WebSocket updates → Essential for collaborative experience
+- Notification system → Keeps users informed of changes
+
+## Production Ready (Week 5-6)
+- Security hardening → Protects user data
+- Performance optimization → Ensures scalable user experience
+- Monitoring and deployment → Enables production operations
+
+# Risks and Mitigations  
+## Technical Challenges
+- **Real-time synchronization complexity**: Mitigate by using proven WebSocket libraries and implementing conflict resolution
+- **Database performance with concurrent users**: Address through proper indexing, connection pooling, and query optimization
+- **JWT token security**: Implement short-lived access tokens with secure refresh token rotation
+
+## MVP Scope Management
+- **Feature creep risk**: Maintain strict focus on three-state kanban with basic collaboration
+- **Over-engineering authentication**: Use battle-tested authentication patterns and libraries
+- **Complex permission system**: Start with simple owner/editor/viewer roles, expand later
+
+## Resource Constraints  
+- **Development timeline pressure**: Prioritize core kanban functionality over advanced features
+- **Testing coverage**: Implement automated testing from the start to prevent regression
+- **Database migration complexity**: Design schema changes carefully with migration strategy
+
+# Appendix  
+## Technical Specifications
+- **Framework**: NestJS with TypeScript strict mode
+- **Database**: TypeORM with PostgreSQL (production), SQLite (development)
+- **Authentication**: JWT with bcrypt password hashing
+- **Validation**: class-validator for input validation
+- **Testing**: Jest for unit and integration testing
+- **Documentation**: Swagger/OpenAPI 3.0
+
+## Performance Requirements
+- API response time < 200ms for standard operations
+- Support for 100+ concurrent users per server instance
+- Real-time updates delivered within 100ms
+- Database queries optimized with proper indexing
+
+## Security Considerations
+- OWASP Top 10 compliance
+- Input sanitization and XSS prevention
+- SQL injection prevention through parameterized queries
+- Rate limiting: 100 requests per minute per user
+- CORS configuration for frontend integration
+- Helmet.js for security headers
+</PRD>
+
+ 
