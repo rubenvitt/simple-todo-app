@@ -1,0 +1,118 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TaskStatus {
+  BACKLOG
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum PermissionLevel {
+  VIEWER
+  EDITOR
+  OWNER
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  ownedLists     List[]
+  assignedTasks  Task[]        @relation("AssignedTasks")
+  sharedLists    ListShare[]
+  notifications  Notification[]
+
+  @@map("users")
+}
+
+model List {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  color       String   @default("#3B82F6") // Default blue color
+  userId      String   @map("user_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  owner  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tasks  Task[]
+  shares ListShare[]
+
+  @@map("lists")
+}
+
+model Task {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  status         TaskStatus   @default(BACKLOG)
+  priority       TaskPriority @default(MEDIUM)
+  dueDate        DateTime?    @map("due_date")
+  listId         String       @map("list_id")
+  assignedUserId String?      @map("assigned_user_id")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  list         List  @relation(fields: [listId], references: [id], onDelete: Cascade)
+  assignedUser User? @relation("AssignedTasks", fields: [assignedUserId], references: [id], onDelete: SetNull)
+
+  @@map("tasks")
+}
+
+model ListShare {
+  id              String          @id @default(uuid())
+  listId          String          @map("list_id")
+  userId          String          @map("user_id")
+  permissionLevel PermissionLevel @map("permission_level")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Ensure unique combination of list and user
+  @@unique([listId, userId])
+  @@map("list_shares")
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  userId     String   @map("user_id")
+  message    String
+  readStatus Boolean  @default(false) @map("read_status")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}

@@ -1,0 +1,116 @@
+Simple Todo App – Frontend PRD (v1.0)
+=================================================
+
+1. Überblick
+------------
+Die Simple Todo App erhält ein vollwertiges Web-Frontend, das direkt durch den bestehenden NestJS-Backend-Server ausgeliefert wird. Ziel ist ein möglichst einfaches Deployment (ein Container, ein Port) und eine nahtlose Integration mit den bereits geplanten REST-/WebSocket-APIs.
+
+2. Vision & Ziele
+-----------------
+* Benutzer können Aufgabenlisten gemeinsam verwalten, Aufgaben im Kanban-Stil organisieren und in Echtzeit zusammenarbeiten.
+* Einfache, responsive UI auf Basis von React (+ TypeScript) mit Ant Design-Komponenten und Tailwind CSS-Utility-Klassen.
+* Single-Page-Application (SPA) – Assets werden als statische Dateien aus `NestJS` bereitgestellt (`@nestjs/serve-static`).
+* Authentifizierung via JWT (Access + Refresh) über die bestehenden API-Endpunkte.
+* Realtime-Updates (Tasks, Listen, Notifications) über WebSockets.
+
+3. Technischer Stack
+--------------------
+* **Framework**: React 18 + Vite (+ Vitest für Unit-Tests)
+* **Styling**: Ant Design 5 Komponentenbibliothek + Tailwind CSS 3 Utilities
+* **State-Management**: React Query (TanStack Query) für API-Daten, Zustand für UI-State
+* **Formulare & Validation**: React Hook Form + Zod
+* **Routing**: React Router v6
+* **Internationalisierung**: i18next (Deutsch + Englisch)
+* **Testing**: Vitest (Unit), React Testing Library, Cypress (E2E – später)
+* **Build & Delivery**:
+  * `pnpm run build:frontend` erzeugt statische Dateien in `dist/frontend`.
+  * NestJS Server bedient diese via `ServeStaticModule` (fallback auf `index.html`).
+
+4. Informationsarchitektur & Kern-Screens
+-----------------------------------------
+| # | Screen | Kurzbeschreibung |
+|---|---------|-----------------|
+| 1 | **Auth** | Login, Registrierung, Passwort-Reset |
+| 2 | **Dashboard** | Übersicht aller Listen des Nutzers inkl. Farbcodierung & Fortschritts-Statistiken |
+| 3 | **Listen-Detail** | Kanban-Board der Aufgaben (Spalten: *TODO*, *IN PROGRESS*, *DONE*) + Filter + Suche |
+| 4 | **Aufgaben-Dialog** | Modal zum Erstellen/Bearbeiten von Aufgaben (Titel, Beschreibung, Fälligkeitsdatum, Anhänge) |
+| 5 | **List-Share** | Verwaltung von Berechtigungen (Owner, Editor, Viewer) + Einladungen per E-Mail |
+| 6 | **Benachrichtigungen** | Echtzeit-Liste aller Notifications (Badge + Drawer) |
+| 7 | **Profil** | Benutzerprofil, Passwort ändern, Account löschen |
+| 8 | **Einstellungen** | Theme (Light/Dark), Sprache, Benachrichtigungs-Präferenzen |
+
+5. Funktionale Anforderungen (Ausschnitt)
+-----------------------------------------
+### 5.1 Authentifizierung
+- Login mit E-Mail + Passwort → `POST /auth/login` (JWT Access + Refresh)
+- Registrierung → `POST /auth/register`
+- Refresh-Token → `POST /auth/refresh`
+- Protected Routes per **Auth Guard** (React Router) – Weiterleitung zu /login bei 401
+
+### 5.2 Listen
+- Listen CRUD → Endpunkte `/lists` (GET, POST, PATCH, DELETE)
+- Farbcodierung, Fortschrittsbalken (berechnet aus erledigten Tasks)
+- Teilen von Listen (Share-Dialog → `/lists/:id/share`)
+
+### 5.3 Aufgaben
+- Aufgaben CRUD → Endpunkte `/tasks`
+- Spaltenwechsel (Status-Transition) mit Drag & Drop (dnd-kit) (Spalten: **Todo**, **Doing**, **Done**)
+- Inline-Bearbeitung von Titel / Status / Fälligkeitsdatum / Priorität / Zuweisung
+- Aufgaben-Filter & Suche: Status, Due Date, Priorität, Zugewiesene Person
+- Bulk-Operationen: Mehrere Aufgaben gleichzeitig verschieben oder Status ändern
+
+### 5.4 Notifications
+- WebSocket Kanal `notifications` – Push von neuen Benachrichtigungen
+- Anzeige als Badge + Drawer; Mark-as-read → `PATCH /notifications/:id/read`
+
+### 5.5 Echtzeit-Synchronisation
+- Subscriptions auf Listen- und Aufgaben-Events via WebSocket (`/ws`) – Updates im UI ohne Reload
+- Presence-Indikator: Anzeige, welche Team-Mitglieder gerade online sind und auf derselben Liste arbeiten
+
+### 5.6 Fehler- & Ladezustände
+- Globale Error Boundary + zentraler Toast Service (Ant Design Message)
+- Skeletons/Spinner bei Ladevorgängen
+
+6. Nicht-funktionale Anforderungen
+----------------------------------
+* **Performance**: LCP < 2,5 s (90. Perzentil) auf Desktop & Mobile
+* **Barrierefreiheit**: WCAG 2.1 AA, Tastaturnavigation, aria-Tags in Ant Design Komponenten sicherstellen
+* **Security**: XSS-Schutz (React Escape), CSRF nicht relevant (JWT im Header), sichere Storage (Access Token im Memory, Refresh Token als HttpOnly Cookie)
+* **Responsiveness**: Mobile First – Breakpoints sm/md/lg/xl gemäß Tailwind-Default
+* **SEO**: Basis-Meta-Tags; keine Server-Side-Rendering Anforderungen (interne App)
+
+7. Abhängigkeiten
+-----------------
+* Fertigstellung der Backend-Endpoints: Auth (Aufgabe 3), Lists (6), Tasks (7), Notifications (11), WebSockets (12)
+* CI-Pipeline muss sowohl Backend- als auch Frontend-Build enthalten
+
+8. Milestones & Zeitplan (T-shirt Sizing)
+----------------------------------------
+| Woche | Meilenstein | Aufwand |
+|-------|-------------|---------|
+| 1 | Frontend-Setup (Vite, React, Tailwind, Ant D) | S |
+| 2 | Auth Flows + Global Layout | M |
+| 3 | Lists Dashboard | M |
+| 4 | Tasks Kanban Board + Drag & Drop | L |
+| 5 | Sharing Feature + Notifications UI | M |
+| 6 | Profil & Einstellungen, I18n | S |
+| 7 | Tests (Unit + E2E), Accessibility Audit | M |
+| 8 | Performance Optimierung & Release Candidate | S |
+
+9. Risiken & Annahmen
+---------------------
+* **Risiko**: Komplexität von Drag & Drop → Prototype frühzeitig erstellen.
+* **Risiko**: WebSocket-Skalierung – Annahme: Single Node für MVP.
+* **Annahme**: Benutzerverwaltung (Passwort-Reset) erfolgt vollständig über vorhandenes Backend.
+
+10. Anhang (API-Mapping)
+------------------------
+| Aktion | HTTP / WS | Endpoint | Methode |
+|--------|-----------|----------|---------|
+| Login | HTTP | /auth/login | POST |
+| Listen abrufen | HTTP | /lists | GET |
+| Aufgaben-Updates | WS | /ws/tasks | SUBSCRIBE |
+| Notification Push | WS | /ws/notifications | SUBSCRIBE |
+
+---
+_Ende des Dokuments_ 
