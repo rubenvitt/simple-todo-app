@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { InvitationsModule } from './invitations/invitations.module';
+import { ListSharesModule } from './list-shares/list-shares.module';
 import { ListsModule } from './lists/lists.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TasksModule } from './tasks/tasks.module';
@@ -16,6 +19,7 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {
         name: 'short',
@@ -36,8 +40,10 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     UsersModule,
     ListsModule,
+    ListSharesModule,
     TasksModule,
     NotificationsModule,
+    InvitationsModule,
   ],
   controllers: [AppController],
   providers: [

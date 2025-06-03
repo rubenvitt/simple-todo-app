@@ -1,4 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ListAccessGuard, ListPermissionGuard } from '../common/guards';
 import { CreateListDto, UpdateListDto } from './dto';
 import { ListsController } from './lists.controller';
 import { ListsService } from './lists.service';
@@ -46,7 +48,14 @@ describe('ListsController', () => {
       providers: [
         { provide: ListsService, useValue: mockListsService },
       ],
-    }).compile();
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ListAccessGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(ListPermissionGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<ListsController>(ListsController);
     listsService = module.get(ListsService);

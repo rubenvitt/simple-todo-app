@@ -1,3 +1,5 @@
+import { PermissionLevel } from '../../../generated/prisma';
+
 export class ListResponseDto {
     id!: string;
     name!: string;
@@ -6,4 +8,6 @@ export class ListResponseDto {
     userId!: string;
     createdAt!: Date;
     updatedAt!: Date;
+    isOwner?: boolean;
+    permissionLevel?: PermissionLevel | 'OWNER' | null;
 } 

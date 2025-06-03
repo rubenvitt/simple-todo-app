@@ -1,1 +1,1 @@
-// Decorators will be exported here
+export * from './list-permission.decorator';

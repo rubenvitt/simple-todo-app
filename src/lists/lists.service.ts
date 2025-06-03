@@ -38,9 +38,21 @@ export class ListsService {
         const { page = 1, limit = 10 } = paginationDto;
         const skip = (page - 1) * limit;
 
+        // Get both owned lists and shared lists
         const [lists, total] = await Promise.all([
             this.prisma.list.findMany({
-                where: { userId },
+                where: {
+                    OR: [
+                        { userId }, // Lists owned by user
+                        {
+                            shares: {
+                                some: {
+                                    userId, // Lists shared with user
+                                },
+                            },
+                        },
+                    ],
+                },
                 select: {
                     id: true,
                     name: true,
@@ -49,20 +61,52 @@ export class ListsService {
                     userId: true,
                     createdAt: true,
                     updatedAt: true,
+                    shares: {
+                        where: { userId },
+                        select: {
+                            permissionLevel: true,
+                        },
+                    },
                 },
                 orderBy: { createdAt: 'desc' },
                 skip,
                 take: limit,
             }),
             this.prisma.list.count({
-                where: { userId },
+                where: {
+                    OR: [
+                        { userId },
+                        {
+                            shares: {
+                                some: {
+                                    userId,
+                                },
+                            },
+                        },
+                    ],
+                },
             }),
         ]);
+
+        // Transform the response to include permission information
+        const transformedLists = lists.map(list => ({
+            id: list.id,
+            name: list.name,
+            description: list.description,
+            color: list.color,
+            userId: list.userId,
+            createdAt: list.createdAt,
+            updatedAt: list.updatedAt,
+            isOwner: list.userId === userId,
+            permissionLevel: list.userId === userId
+                ? 'OWNER'
+                : list.shares[0]?.permissionLevel || null,
+        }));
 
         const totalPages = Math.ceil(total / limit);
 
         return {
-            lists,
+            lists: transformedLists,
             total,
             page,
             limit,
@@ -74,7 +118,16 @@ export class ListsService {
         const list = await this.prisma.list.findFirst({
             where: {
                 id: listId,
-                userId,
+                OR: [
+                    { userId }, // User owns the list
+                    {
+                        shares: {
+                            some: {
+                                userId, // User has shared access
+                            },
+                        },
+                    },
+                ],
             },
             select: {
                 id: true,
@@ -84,6 +137,12 @@ export class ListsService {
                 userId: true,
                 createdAt: true,
                 updatedAt: true,
+                shares: {
+                    where: { userId },
+                    select: {
+                        permissionLevel: true,
+                    },
+                },
             },
         });
 
@@ -91,7 +150,20 @@ export class ListsService {
             throw new NotFoundException('List not found');
         }
 
-        return list;
+        // Transform response to include permission information
+        return {
+            id: list.id,
+            name: list.name,
+            description: list.description,
+            color: list.color,
+            userId: list.userId,
+            createdAt: list.createdAt,
+            updatedAt: list.updatedAt,
+            isOwner: list.userId === userId,
+            permissionLevel: list.userId === userId
+                ? 'OWNER'
+                : list.shares[0]?.permissionLevel || null,
+        };
     }
 
     async updateList(userId: string, listId: string, updateListDto: UpdateListDto): Promise<ListResponseDto> {

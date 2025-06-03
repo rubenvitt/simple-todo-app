@@ -10,7 +10,10 @@ import {
     Request,
     UseGuards
 } from '@nestjs/common';
+import { PermissionLevel } from '../../generated/prisma';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RequireListPermission } from '../common/decorators';
+import { ListAccessGuard, ListPermissionGuard } from '../common/guards';
 import { CreateListDto, ListResponseDto, PaginationDto, UpdateListDto } from './dto';
 import { ListsService } from './lists.service';
 
@@ -42,6 +45,7 @@ export class ListsController {
     }
 
     @Get(':id')
+    @UseGuards(ListAccessGuard)
     async getListById(
         @Request() req: any,
         @Param('id') listId: string,
@@ -50,6 +54,8 @@ export class ListsController {
     }
 
     @Put(':id')
+    @UseGuards(ListPermissionGuard)
+    @RequireListPermission(PermissionLevel.EDITOR)
     async updateList(
         @Request() req: any,
         @Param('id') listId: string,
@@ -59,6 +65,8 @@ export class ListsController {
     }
 
     @Delete(':id')
+    @UseGuards(ListPermissionGuard)
+    @RequireListPermission(PermissionLevel.OWNER)
     async deleteList(
         @Request() req: any,
         @Param('id') listId: string,

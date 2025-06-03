@@ -128,16 +128,23 @@ describe('ListsService', () => {
     const paginationDto = { page: 1, limit: 10 };
 
     it('should get paginated lists successfully', async () => {
-      const mockLists = [mockListResponse];
+      const mockListsWithShares = [{
+        ...mockListResponse,
+        shares: [],
+      }];
       const mockTotal = 1;
 
-      prismaService.list.findMany.mockResolvedValue(mockLists);
+      prismaService.list.findMany.mockResolvedValue(mockListsWithShares);
       prismaService.list.count.mockResolvedValue(mockTotal);
 
       const result = await service.getLists(mockUserId, paginationDto);
 
       expect(result).toEqual({
-        lists: mockLists,
+        lists: [{
+          ...mockListResponse,
+          isOwner: true,
+          permissionLevel: 'OWNER',
+        }],
         total: mockTotal,
         page: 1,
         limit: 10,
@@ -145,7 +152,18 @@ describe('ListsService', () => {
       });
 
       expect(prismaService.list.findMany).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
+        where: {
+          OR: [
+            { userId: mockUserId },
+            {
+              shares: {
+                some: {
+                  userId: mockUserId,
+                },
+              },
+            },
+          ],
+        },
         select: {
           id: true,
           name: true,
@@ -154,6 +172,12 @@ describe('ListsService', () => {
           userId: true,
           createdAt: true,
           updatedAt: true,
+          shares: {
+            where: { userId: mockUserId },
+            select: {
+              permissionLevel: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip: 0,
@@ -161,7 +185,18 @@ describe('ListsService', () => {
       });
 
       expect(prismaService.list.count).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
+        where: {
+          OR: [
+            { userId: mockUserId },
+            {
+              shares: {
+                some: {
+                  userId: mockUserId,
+                },
+              },
+            },
+          ],
+        },
       });
     });
 
@@ -186,15 +221,32 @@ describe('ListsService', () => {
 
   describe('getListById', () => {
     it('should get list by id successfully', async () => {
-      prismaService.list.findFirst.mockResolvedValue(mockListResponse);
+      const mockListWithShares = {
+        ...mockListResponse,
+        shares: [],
+      };
+      prismaService.list.findFirst.mockResolvedValue(mockListWithShares);
 
       const result = await service.getListById(mockUserId, mockListId);
 
-      expect(result).toEqual(mockListResponse);
+      expect(result).toEqual({
+        ...mockListResponse,
+        isOwner: true,
+        permissionLevel: 'OWNER',
+      });
       expect(prismaService.list.findFirst).toHaveBeenCalledWith({
         where: {
           id: mockListId,
-          userId: mockUserId,
+          OR: [
+            { userId: mockUserId },
+            {
+              shares: {
+                some: {
+                  userId: mockUserId,
+                },
+              },
+            },
+          ],
         },
         select: {
           id: true,
@@ -204,6 +256,12 @@ describe('ListsService', () => {
           userId: true,
           createdAt: true,
           updatedAt: true,
+          shares: {
+            where: { userId: mockUserId },
+            select: {
+              permissionLevel: true,
+            },
+          },
         },
       });
     });
