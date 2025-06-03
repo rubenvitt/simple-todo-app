@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
-import { ChangePasswordDto, ProfileResponseDto, UpdateProfileDto } from './dto';
+import { ChangePasswordDto, ProfileResponseDto, SearchUsersDto, UpdateProfileDto } from './dto';
 
 @Injectable()
 export class UsersService {
@@ -125,5 +125,85 @@ export class UsersService {
         });
 
         return !!user;
+    }
+
+    async searchUsers(searchDto: SearchUsersDto, userId: string) {
+        const {
+            search,
+            listId,
+            page = 1,
+            limit = 10
+        } = searchDto;
+
+        // Build where clause for filtering
+        const where: any = {};
+
+        // Search in name and email
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { email: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        // If listId is provided, only show users with access to that list
+        if (listId) {
+            // First verify the requesting user has access to the list
+            const listAccess = await this.prisma.list.findFirst({
+                where: {
+                    id: listId,
+                    OR: [
+                        { userId: userId }, // User owns the list
+                        { shares: { some: { userId: userId } } } // User has shared access
+                    ]
+                }
+            });
+
+            if (!listAccess) {
+                throw new NotFoundException('List not found or you do not have access to it');
+            }
+
+            // Filter users who have access to the specified list
+            where.OR = [
+                { lists: { some: { id: listId } } }, // User owns the list
+                { shares: { some: { listId: listId } } } // User has shared access to the list
+            ];
+        }
+
+        // Exclude the current user from results
+        where.id = {
+            not: userId
+        };
+
+        // Calculate pagination
+        const skip = (page - 1) * limit;
+
+        // Execute query with count for pagination
+        const [users, total] = await Promise.all([
+            this.prisma.user.findMany({
+                where,
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                },
+                orderBy: {
+                    name: 'asc'
+                },
+                skip,
+                take: limit
+            }),
+            this.prisma.user.count({ where })
+        ]);
+
+        return {
+            data: users,
+            pagination: {
+                page,
+                limit,
+                total,
+                totalPages: Math.ceil(total / limit)
+            }
+        };
     }
 }

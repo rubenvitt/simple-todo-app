@@ -6,11 +6,12 @@ import {
     HttpCode,
     HttpStatus,
     Put,
+    Query,
     Request,
-    UseGuards,
+    UseGuards
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { ChangePasswordDto, ProfileResponseDto, UpdateProfileDto } from './dto';
+import { ChangePasswordDto, ProfileResponseDto, SearchUsersDto, UpdateProfileDto } from './dto';
 import { UserExistsGuard } from './guards';
 import { UsersService } from './users.service';
 
@@ -45,5 +46,11 @@ export class UsersController {
     @HttpCode(HttpStatus.OK)
     async deleteAccount(@Request() req: any): Promise<{ message: string }> {
         return this.usersService.deleteAccount(req.user.id);
+    }
+
+    @Get('search')
+    async searchUsers(@Query() searchDto: SearchUsersDto, @Request() req: any) {
+        const userId = req.user?.sub || req.user?.id;
+        return this.usersService.searchUsers(searchDto, userId);
     }
 }

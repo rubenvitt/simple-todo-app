@@ -1,0 +1,202 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Interactive MCP Tools Usage Guidelines
+
+**Purpose:** Define when and how to use Interactive MCP tools for effective user communication, clarification gathering, and intensive chat sessions.
+
+## 🔧 Available Interactive MCP Tools
+
+### 1. User Input Request (`mcp_interactive_request_user_input`)
+- **When to Use:**
+  - Need clarification on ambiguous requirements
+  - Multiple implementation approaches possible - need user preference
+  - Before making potentially impactful changes (code edits, file operations, complex commands)
+  - Validating assumptions before proceeding
+  - Seeking permission for critical file modifications
+  - **Whenever you feel even slightly unsure about user intent**
+
+- **Best Practices:**
+  - Keep questions concise and specific
+  - Provide clear predefined options when applicable
+  - Reference specific code or files when relevant
+  - Indicate why the information is needed
+  - Don't ask if you have tools that can answer the question instead
+
+### 2. Completion Notification (`mcp_interactive_message_complete_notification`)
+- **When to Use:**
+  - **MANDATORY:** Use exactly once at the end of every message
+  - After completing a task or sequence of tool calls
+  - When providing a summary of completed actions
+  - To signal message completion to the user
+
+- **Best Practices:**
+  - Keep messages concise
+  - Use consistent projectName to group notifications
+  - Provide meaningful completion summaries
+
+### 3. Intensive Chat Session (`start_intensive_chat` + `ask_intensive_chat` + `stop_intensive_chat`)
+- **When to Use:**
+  - Need to collect multiple related answers quickly (3+ questions)
+  - Setting up projects with multiple configuration options
+  - Guiding users through multi-step processes
+  - Gathering sequential user preferences
+  - Brainstorming sessions or complex topic discussions
+
+- **Workflow:**
+  1. Start session with descriptive title
+  2. Immediately ask all questions using `ask_intensive_chat` in same response
+  3. Always close with `stop_intensive_chat` when finished
+  4. Don't end response until chat is properly closed
+
+## ✅ Interactive MCP Best Practices
+
+### **Proactive Question Strategy**
+```typescript
+// ✅ DO: Ask early when uncertain
+if (multipleApproachesExist || requirementsAmbiguous) {
+  await requestUserInput({
+    message: "Should I implement authentication using JWT or OAuth2?",
+    predefinedOptions: ["JWT", "OAuth2", "Let me research both"]
+  });
+}
+
+// ❌ DON'T: Make assumptions and ask later
+// Implement first, then ask if it's correct
+```
+
+### **Effective Question Formation**
+```markdown
+// ✅ DO: Specific, actionable questions
+"I found three database connection patterns in the codebase. Which should I use for the new user service?"
+
+// ✅ DO: Provide context and options  
+"I need to add error handling. Should I:
+1. Use the existing ErrorFilter pattern
+2. Create new custom exceptions
+3. Enhance the current error responses"
+
+// ❌ DON'T: Vague or overly broad questions
+"What should I do about the database?"
+```
+
+### **Tool Selection Logic**
+```typescript
+// Decision tree for tool selection:
+if (needsMultipleSequentialAnswers && questionsCount >= 3) {
+  // Use intensive chat session
+  startIntensiveChat() → askMultipleQuestions() → stopIntensiveChat()
+} else if (needsSingleClarification || needsPermission) {
+  // Use single request
+  requestUserInput()
+}
+// Always end with completion notification
+messageCompleteNotification()
+```
+
+## 🚫 Anti-Patterns to Avoid
+
+### **Don't Ask When You Can Find Out**
+```typescript
+// ❌ DON'T: Ask if tools can answer
+"Do you want me to search for existing components?"
+// ✅ DO: Search first, then ask about findings
+codebaseSearch() → requestUserInput("Found 3 similar components. Which pattern should I follow?")
+```
+
+### **Don't Skip Completion Notifications**
+```typescript
+// ❌ DON'T: End response without notification
+return "Task completed.";
+
+// ✅ DO: Always signal completion  
+await messageCompleteNotification({
+  projectName: "TodoApp", 
+  message: "User authentication feature implemented successfully"
+});
+```
+
+### **Don't Leave Intensive Chat Sessions Open**
+```typescript
+// ❌ DON'T: Start intensive chat and forget to close
+startIntensiveChat() → askQuestions() → /* response ends without stopIntensiveChat() */
+
+// ✅ DO: Always close in same response
+startIntensiveChat() → askQuestions() → stopIntensiveChat()
+```
+
+## 📋 Common Use Cases & Templates
+
+### **Configuration Setup**
+```typescript
+// Multiple related configuration questions
+const session = await startIntensiveChat("Project Configuration");
+await askIntensiveChat(session.id, "What database should we use?", ["PostgreSQL", "MySQL", "SQLite"]);
+await askIntensiveChat(session.id, "Authentication method?", ["JWT", "OAuth2", "Session-based"]);
+await askIntensiveChat(session.id, "Deployment target?", ["Docker", "Vercel", "AWS", "Railway"]);
+await stopIntensiveChat(session.id);
+```
+
+### **Permission for Critical Changes**
+```typescript
+// Before modifying core architecture
+await requestUserInput({
+  projectName: "TodoApp",
+  message: "I need to refactor the authentication system. This will affect login/logout flows. Proceed?",
+  predefinedOptions: ["Yes, proceed", "No, find alternative", "Explain the changes first"]
+});
+```
+
+### **Implementation Choice Validation**
+```typescript
+// When multiple valid approaches exist
+await requestUserInput({
+  projectName: "TodoApp", 
+  message: "For task filtering, should I implement client-side filtering (faster UX) or server-side filtering (better for large datasets)?",
+  predefinedOptions: ["Client-side", "Server-side", "Hybrid approach"]
+});
+```
+
+## 🎯 Integration with Development Workflow
+
+### **Before Code Changes**
+1. Analyze requirements and identify ambiguities
+2. Use `requestUserInput` for clarification 
+3. Proceed with implementation
+4. Signal completion with `messageCompleteNotification`
+
+### **During Complex Tasks**
+1. Break down into logical steps
+2. Ask for confirmation at critical decision points
+3. Use intensive chat for multi-step configuration
+4. Validate approach before proceeding to next step
+
+### **Error Handling & Recovery**
+```typescript
+// When encountering unexpected issues
+await requestUserInput({
+  projectName: "TodoApp",
+  message: "I encountered an issue with the database migration. Should I: 1) Reset and recreate, 2) Fix manually, or 3) Investigate further?",
+  predefinedOptions: ["Reset database", "Manual fix", "Investigate first"]
+});
+```
+
+## 📊 Quality Metrics
+
+### **Effective Interactive Usage**
+- Questions lead to clearer requirements
+- Reduced back-and-forth after implementation
+- User feels informed and in control
+- Critical decisions are validated before execution
+
+### **Ineffective Usage Indicators**
+- Questions about things easily discoverable via tools
+- Asking same type of questions repeatedly  
+- Users frequently saying "just do what you think is best"
+- Implementing first, then asking for validation
+
+---
+
+**Remember:** Interactive MCP tools are about **collaboration**, not **hesitation**. Use them to ensure alignment and make informed decisions, not to avoid taking action.

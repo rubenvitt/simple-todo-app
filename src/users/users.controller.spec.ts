@@ -25,6 +25,7 @@ describe('UsersController', () => {
       updateProfile: jest.fn(),
       changePassword: jest.fn(),
       deleteAccount: jest.fn(),
+      searchUsers: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -108,6 +109,43 @@ describe('UsersController', () => {
 
       expect(result).toEqual(expectedResponse);
       expect(usersService.deleteAccount).toHaveBeenCalledWith(mockUser.id);
+    });
+  });
+
+  describe('searchUsers', () => {
+    const mockSearchResult = {
+      data: [
+        { id: 'user-1', name: 'User 1', email: 'user1@example.com' },
+        { id: 'user-2', name: 'User 2', email: 'user2@example.com' }
+      ],
+      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 }
+    };
+
+    it('should call usersService.searchUsers with correct parameters', async () => {
+      const searchDto = { search: 'user', page: 1, limit: 10 };
+      usersService.searchUsers.mockResolvedValue(mockSearchResult);
+
+      const req = { user: { sub: 'user-123' } };
+      const result = await controller.searchUsers(searchDto as any, req);
+
+      expect(usersService.searchUsers).toHaveBeenCalledWith(
+        searchDto,
+        'user-123'
+      );
+      expect(result).toBe(mockSearchResult);
+    });
+
+    it('should handle req.user.id fallback for userId extraction', async () => {
+      const searchDto = { search: 'test' };
+      usersService.searchUsers.mockResolvedValue(mockSearchResult);
+
+      const req = { user: { id: 'user-456' } }; // No sub property
+      await controller.searchUsers(searchDto as any, req);
+
+      expect(usersService.searchUsers).toHaveBeenCalledWith(
+        searchDto,
+        'user-456'
+      );
     });
   });
 });
