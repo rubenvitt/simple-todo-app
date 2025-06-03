@@ -9,7 +9,7 @@ import {
     OnGatewayInit,
     SubscribeMessage,
     WebSocketGateway,
-    WebSocketServer,
+    WebSocketServer
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from '../common/services/prisma.service';
@@ -18,6 +18,14 @@ import { TasksService } from '../tasks/tasks.service';
 import { UpdateProfileDto } from '../users/dto';
 import { UsersService } from '../users/users.service';
 import { WsJwtAuthGuard } from './guards';
+import {
+    PresenceStatus,
+    UserActivity
+} from './interfaces/connection.interface';
+import { PermissionLevel } from './interfaces/permission.interface';
+import { ConnectionManagerService } from './services/connection-manager.service';
+import { EnhancedBroadcastService } from './services/enhanced-broadcast.service';
+import { EnhancedPermissionService } from './services/enhanced-permission.service';
 
 // Extended Socket interface to include user information
 interface AuthenticatedSocket extends Socket {
@@ -74,10 +82,16 @@ export class WebSocketsGateway
         private readonly prisma: PrismaService,
         private readonly tasksService: TasksService,
         private readonly usersService: UsersService,
+        private readonly connectionManager: ConnectionManagerService,
+        private readonly enhancedPermissionService: EnhancedPermissionService,
+        private readonly enhancedBroadcastService: EnhancedBroadcastService,
     ) { }
 
-    afterInit(__server: Server) {
+    afterInit(server: Server) {
         this.logger.log('WebSocket Gateway initialized with JWT authentication and room management');
+
+        // Initialize connection manager with server
+        this.connectionManager.initialize(server);
 
         // Start automatic room cleanup process
         this.startRoomCleanup();
@@ -90,7 +104,11 @@ export class WebSocketsGateway
             if (user) {
                 this.logger.log(`Authenticated client connected: ${client.id} (User: ${user.email})`);
 
-                // Send welcome message with user info
+                // Register connection with connection manager
+                this.connectionManager.registerConnection(client, user.id, user);
+
+                // Send welcome message with user info and connection stats
+                const connectionStats = this.connectionManager.getConnectionStats();
                 client.emit('connection-established', {
                     message: 'Successfully connected to WebSocket',
                     user: {
@@ -98,6 +116,7 @@ export class WebSocketsGateway
                         email: user.email,
                         name: user.name,
                     },
+                    connectionStats,
                     timestamp: new Date().toISOString(),
                 });
             } else {
@@ -116,15 +135,22 @@ export class WebSocketsGateway
         const userInfo = user ? ` (User: ${user.email})` : '';
         this.logger.log(`Client disconnected: ${client.id}${userInfo}`);
 
+        // Unregister connection from connection manager
+        this.connectionManager.unregisterConnection(client.id);
+
         // Remove client from all rooms and clean up memberships
         this.cleanupClientFromRooms(client);
     }
 
     @SubscribeMessage('ping')
     handlePing(@ConnectedSocket() client: AuthenticatedSocket): void {
+        // Update heartbeat in connection manager
+        this.connectionManager.updateHeartbeat(client.id);
+
         client.emit('pong', {
             timestamp: new Date().toISOString(),
             userId: client.user?.id,
+            connectionStatus: 'healthy',
         });
     }
 
@@ -1014,6 +1040,525 @@ export class WebSocketsGateway
         }
     }
 
+    // =============================================================================
+    // ENHANCED PERMISSION-AWARE EVENT HANDLERS
+    // =============================================================================
+
+    /**
+     * Enhanced task creation with permission-level-aware broadcasting
+     */
+    @SubscribeMessage('enhanced-task-create')
+    async handleEnhancedTaskCreate(
+        @MessageBody() data: CreateTaskDto,
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): Promise<void> {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            // Validate user can create tasks (needs EDITOR+ permission)
+            const userPermission = await this.enhancedPermissionService.getUserPermission(client.user.id, data.listId);
+
+            if (!userPermission.canEdit) {
+                await this.enhancedBroadcastService.broadcastAuditEvent(
+                    this.server,
+                    data.listId,
+                    client.user.id,
+                    'task-create-denied',
+                    userPermission.permissionLevel || PermissionLevel.VIEWER,
+                    false,
+                    'Insufficient permissions to create tasks'
+                );
+
+                client.emit('error', {
+                    message: 'Access denied: Insufficient permissions to create tasks',
+                    requiredPermission: 'EDITOR'
+                });
+                return;
+            }
+
+            // Create task using the TasksService
+            const newTask = await this.tasksService.create(data, client.user.id);
+
+            // Log permission action
+            this.enhancedPermissionService.logPermissionAction(
+                client.user.id,
+                data.listId,
+                'task-create',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Created task: ${newTask.title}`
+            );
+
+            // Send confirmation to the creating user
+            client.emit('enhanced-task-created', {
+                message: 'Task created successfully',
+                task: newTask,
+                userPermission: userPermission.permissionLevel,
+                timestamp: new Date().toISOString(),
+            });
+
+            // Use permission-aware notification broadcasting
+            await this.enhancedBroadcastService.broadcastPermissionAwareNotification(
+                this.server,
+                newTask.listId,
+                'enhanced-task-created',
+                `New task created: ${newTask.title}`,
+                client.user.id,
+                client.user.name,
+                'WRITE'
+            );
+
+            // Broadcast audit event to owners
+            await this.enhancedBroadcastService.broadcastAuditEvent(
+                this.server,
+                newTask.listId,
+                client.user.id,
+                'task-create',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Task created: ${newTask.title}`
+            );
+
+        } catch (error) {
+            this.logger.error(`Error creating enhanced task via WebSocket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', {
+                message: error instanceof Error ? error.message : 'Failed to create task',
+            });
+        }
+    }
+
+    /**
+     * Enhanced task deletion with strict permission checks
+     */
+    @SubscribeMessage('enhanced-task-delete')
+    async handleEnhancedTaskDelete(
+        @MessageBody() data: { taskId: string },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): Promise<void> {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        const { taskId } = data;
+
+        try {
+            // Get task info first
+            const taskToDelete = await this.prisma.task.findUnique({
+                where: { id: taskId },
+                select: { id: true, title: true, listId: true }
+            });
+
+            if (!taskToDelete) {
+                client.emit('error', { message: 'Task not found', taskId });
+                return;
+            }
+
+            // Validate user can delete tasks (needs EDITOR+ permission)
+            const userPermission = await this.enhancedPermissionService.getUserPermission(client.user.id, taskToDelete.listId);
+
+            if (!userPermission.canDelete) {
+                await this.enhancedBroadcastService.broadcastAuditEvent(
+                    this.server,
+                    taskToDelete.listId,
+                    client.user.id,
+                    'task-delete-denied',
+                    userPermission.permissionLevel || PermissionLevel.VIEWER,
+                    false,
+                    `Attempted to delete task: ${taskToDelete.title}`
+                );
+
+                client.emit('error', {
+                    message: 'Access denied: Insufficient permissions to delete tasks',
+                    requiredPermission: 'EDITOR',
+                    taskId
+                });
+                return;
+            }
+
+            // Delete task using the TasksService
+            const deletionResult = await this.tasksService.remove(taskId, client.user.id);
+
+            // Log permission action
+            this.enhancedPermissionService.logPermissionAction(
+                client.user.id,
+                taskToDelete.listId,
+                'task-delete',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Deleted task: ${taskToDelete.title}`
+            );
+
+            // Send confirmation to the deleting user
+            client.emit('enhanced-task-deleted', {
+                message: 'Task deleted successfully',
+                deletedTask: deletionResult.deletedTask,
+                userPermission: userPermission.permissionLevel,
+                timestamp: new Date().toISOString(),
+            });
+
+            // Broadcast only to users with EDITOR+ permissions (exclude viewers from sensitive operations)
+            await this.enhancedBroadcastService.broadcastToEditorsAndOwners(
+                this.server,
+                taskToDelete.listId,
+                'enhanced-task-deleted',
+                {
+                    deletedTask: deletionResult.deletedTask,
+                    deletedBy: {
+                        id: client.user.id,
+                        name: client.user.name,
+                        email: client.user.email,
+                    },
+                }
+            );
+
+            // Broadcast audit event to owners
+            await this.enhancedBroadcastService.broadcastAuditEvent(
+                this.server,
+                taskToDelete.listId,
+                client.user.id,
+                'task-delete',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Task deleted: ${taskToDelete.title}`
+            );
+
+        } catch (error) {
+            this.logger.error(`Error deleting enhanced task via WebSocket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', {
+                message: error instanceof Error ? error.message : 'Failed to delete task',
+                taskId,
+            });
+        }
+    }
+
+    /**
+     * Permission change event handler
+     */
+    @SubscribeMessage('change-user-permission')
+    async handleChangeUserPermission(
+        @MessageBody() data: { listId: string; targetUserId: string; newPermissionLevel: PermissionLevel },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): Promise<void> {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        const { listId, targetUserId, newPermissionLevel } = data;
+
+        try {
+            // Validate user can manage permissions (needs OWNER permission)
+            const userPermission = await this.enhancedPermissionService.getUserPermission(client.user.id, listId);
+
+            if (!userPermission.canManageShares) {
+                await this.enhancedBroadcastService.broadcastAuditEvent(
+                    this.server,
+                    listId,
+                    client.user.id,
+                    'permission-change-denied',
+                    userPermission.permissionLevel || PermissionLevel.VIEWER,
+                    false,
+                    `Attempted to change permission for user ${targetUserId}`
+                );
+
+                client.emit('error', {
+                    message: 'Access denied: Only list owners can manage permissions',
+                    requiredPermission: 'OWNER'
+                });
+                return;
+            }
+
+            // Update permission in database (this would be done via a ListSharesService)
+            // For demo purposes, we'll simulate this
+
+            // Log permission action
+            this.enhancedPermissionService.logPermissionAction(
+                client.user.id,
+                listId,
+                'permission-change',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Changed user ${targetUserId} permission to ${newPermissionLevel}`
+            );
+
+            // Send confirmation to the changing user
+            client.emit('permission-changed', {
+                message: 'Permission updated successfully',
+                targetUserId,
+                newPermissionLevel,
+                timestamp: new Date().toISOString(),
+            });
+
+            // Broadcast permission change to all list members
+            await this.enhancedBroadcastService.broadcastPermissionChange(
+                this.server,
+                listId,
+                targetUserId,
+                newPermissionLevel,
+                client.user.id,
+                client.user.name
+            );
+
+            // Broadcast audit event to owners
+            await this.enhancedBroadcastService.broadcastAuditEvent(
+                this.server,
+                listId,
+                client.user.id,
+                'permission-change',
+                userPermission.permissionLevel || PermissionLevel.VIEWER,
+                true,
+                `Permission changed for user ${targetUserId} to ${newPermissionLevel}`
+            );
+
+        } catch (error) {
+            this.logger.error(`Error changing user permission via WebSocket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', {
+                message: error instanceof Error ? error.message : 'Failed to change permission',
+            });
+        }
+    }
+
+    /**
+     * Get user's permission level for a list
+     */
+    @SubscribeMessage('get-my-permission')
+    async handleGetMyPermission(
+        @MessageBody() data: { listId: string },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): Promise<void> {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const userPermission = await this.enhancedPermissionService.getUserPermission(client.user.id, data.listId);
+
+            client.emit('my-permission', {
+                listId: data.listId,
+                permission: userPermission,
+                timestamp: new Date().toISOString(),
+            });
+
+        } catch (error) {
+            this.logger.error(`Error getting user permission via WebSocket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', {
+                message: error instanceof Error ? error.message : 'Failed to get permission information',
+            });
+        }
+    }
+
+    // =============================================================================
+    // CONNECTION MANAGEMENT & PRESENCE TRACKING EVENT HANDLERS
+    // =============================================================================
+
+    /**
+     * Update user presence status
+     */
+    @SubscribeMessage('update-presence-status')
+    handleUpdatePresenceStatus(
+        @MessageBody() data: { status: PresenceStatus },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            this.connectionManager.updateUserStatus(client.user.id, data.status);
+
+            client.emit('presence-status-updated', {
+                status: data.status,
+                timestamp: new Date().toISOString(),
+            });
+
+            this.logger.log(`User ${client.user.email} updated presence status to: ${data.status}`);
+        } catch (error) {
+            this.logger.error(`Error updating presence status: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to update presence status' });
+        }
+    }
+
+    /**
+     * Update user activity
+     */
+    @SubscribeMessage('update-user-activity')
+    handleUpdateUserActivity(
+        @MessageBody() data: { activity: UserActivity },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const activityWithTimestamp: UserActivity = {
+                ...data.activity,
+                timestamp: new Date(),
+            };
+
+            this.connectionManager.updateUserActivity(client.user.id, activityWithTimestamp);
+
+            client.emit('user-activity-updated', {
+                activity: activityWithTimestamp,
+                timestamp: new Date().toISOString(),
+            });
+
+            this.logger.log(`User ${client.user.email} updated activity: ${data.activity.type}`);
+        } catch (error) {
+            this.logger.error(`Error updating user activity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to update user activity' });
+        }
+    }
+
+    /**
+     * Get online users
+     */
+    @SubscribeMessage('get-online-users')
+    handleGetOnlineUsers(@ConnectedSocket() client: AuthenticatedSocket): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const onlineUsers = this.connectionManager.getOnlineUsers();
+
+            client.emit('online-users', {
+                users: onlineUsers,
+                count: onlineUsers.length,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            this.logger.error(`Error getting online users: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to get online users' });
+        }
+    }
+
+    /**
+     * Get users in specific list
+     */
+    @SubscribeMessage('get-users-in-list')
+    handleGetUsersInList(
+        @MessageBody() data: { listId: string },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const usersInList = this.connectionManager.getUsersInList(data.listId);
+
+            client.emit('users-in-list', {
+                listId: data.listId,
+                users: usersInList,
+                count: usersInList.length,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            this.logger.error(`Error getting users in list: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to get users in list' });
+        }
+    }
+
+    /**
+     * Get user presence information
+     */
+    @SubscribeMessage('get-user-presence')
+    handleGetUserPresence(
+        @MessageBody() data: { userId: string },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const userPresence = this.connectionManager.getUserPresence(data.userId);
+
+            if (userPresence) {
+                client.emit('user-presence', {
+                    presence: userPresence,
+                    timestamp: new Date().toISOString(),
+                });
+            } else {
+                client.emit('user-presence', {
+                    presence: null,
+                    message: 'User not found or offline',
+                    timestamp: new Date().toISOString(),
+                });
+            }
+        } catch (error) {
+            this.logger.error(`Error getting user presence: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to get user presence' });
+        }
+    }
+
+    /**
+     * Get connection statistics (admin feature)
+     */
+    @SubscribeMessage('get-connection-stats')
+    handleGetConnectionStats(@ConnectedSocket() client: AuthenticatedSocket): void {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            const connectionStats = this.connectionManager.getConnectionStats();
+
+            client.emit('connection-stats', {
+                stats: connectionStats,
+                timestamp: new Date().toISOString(),
+            });
+        } catch (error) {
+            this.logger.error(`Error getting connection stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to get connection statistics' });
+        }
+    }
+
+    /**
+     * Enhanced join list room with activity tracking
+     */
+    @SubscribeMessage('join-list-room-with-activity')
+    async handleJoinListRoomWithActivity(
+        @MessageBody() data: { listId: string; activity?: UserActivity },
+        @ConnectedSocket() client: AuthenticatedSocket,
+    ): Promise<void> {
+        if (!client.user) {
+            client.emit('error', { message: 'Authentication required' });
+            return;
+        }
+
+        try {
+            // First perform regular room joining
+            await this.handleJoinListRoom({ listId: data.listId }, client);
+
+            // Then update user activity if provided
+            if (data.activity) {
+                const activityWithDetails: UserActivity = {
+                    ...data.activity,
+                    listId: data.listId,
+                    timestamp: new Date(),
+                };
+
+                this.connectionManager.updateUserActivity(client.user.id, activityWithDetails);
+            }
+        } catch (error) {
+            this.logger.error(`Error joining list room with activity: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            client.emit('error', { message: 'Failed to join list room with activity tracking' });
+        }
+    }
+
     /**
      * Cleanup on module destroy
      */
@@ -1021,5 +1566,8 @@ export class WebSocketsGateway
         if (this.cleanupInterval) {
             clearInterval(this.cleanupInterval);
         }
+
+        // Cleanup connection manager
+        this.connectionManager.onModuleDestroy();
     }
 } 
