@@ -1,0 +1,6 @@
+-- CreateEnum
+CREATE TYPE "NotificationType" AS ENUM ('GENERAL', 'TASK_ASSIGNMENT', 'TASK_STATUS_CHANGE', 'LIST_SHARED', 'INVITATION_RECEIVED', 'INVITATION_ACCEPTED', 'LIST_UPDATE');
+
+-- AlterTable
+ALTER TABLE "notifications" ADD COLUMN     "title" TEXT NOT NULL DEFAULT 'Notification',
+ADD COLUMN     "type" "NotificationType" NOT NULL DEFAULT 'GENERAL';
