@@ -12,6 +12,7 @@ import { ListsModule } from './lists/lists.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { TasksModule } from './tasks/tasks.module';
 import { UsersModule } from './users/users.module';
+import { WebSocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { UsersModule } from './users/users.module';
     TasksModule,
     NotificationsModule,
     InvitationsModule,
+    WebSocketsModule,
   ],
   controllers: [AppController],
   providers: [
