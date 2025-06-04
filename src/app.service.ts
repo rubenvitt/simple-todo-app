@@ -1,31 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AppConfig } from './common/config/app.config';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly configService: ConfigService) { }
+  constructor(private readonly configService: ConfigService<AppConfig>) { }
 
   getHello(): string {
-    const port = this.configService.get<number>('PORT', 3000);
-    const nodeEnv = this.configService.get<string>('NODE_ENV', 'development');
+    const port = this.configService.get('port', { infer: true });
+    const nodeEnv = this.configService.get('environment', { infer: true });
 
     return `Hello World! Running on port ${port} in ${nodeEnv} mode.`;
   }
 
-  getHealthStatus(): object {
+  /**
+   * Get application health status and basic info
+   */
+  getHealth() {
     return {
-      dependencies: {
-        nestjs: '^11.0.1',
-        config: '^4.0.2',
-      },
-      modules: {
-        auth: 'loaded',
-        users: 'loaded',
-        lists: 'loaded',
-        tasks: 'loaded',
-        notifications: 'loaded',
-      },
-      environment: this.configService.get<string>('NODE_ENV', 'development'),
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      environment: this.configService.get('environment', { infer: true }),
+      uptime: process.uptime(),
+    };
+  }
+
+  /**
+   * Get application configuration (non-sensitive)
+   */
+  getConfig() {
+    return {
+      environment: this.configService.get('environment', { infer: true }),
+      version: process.env.npm_package_version || '1.0.0',
+      nodeVersion: process.version,
     };
   }
 }

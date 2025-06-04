@@ -62,10 +62,6 @@ class EnvironmentVariables {
 
     @IsOptional()
     @IsString()
-    SENTRY_DSN?: string;
-
-    @IsOptional()
-    @IsString()
     REDIS_URL?: string;
 
     @IsOptional()
@@ -77,34 +73,6 @@ class EnvironmentVariables {
     @IsNumber()
     @Transform(({ value }) => parseInt(value, 10))
     RATE_LIMIT_MAX?: number = 100;
-
-    @IsOptional()
-    @IsString()
-    ENCRYPTION_KEY?: string;
-
-    @IsOptional()
-    @IsString()
-    AWS_ACCESS_KEY_ID?: string;
-
-    @IsOptional()
-    @IsString()
-    AWS_SECRET_ACCESS_KEY?: string;
-
-    @IsOptional()
-    @IsString()
-    AWS_REGION?: string = 'us-east-1';
-
-    @IsOptional()
-    @IsString()
-    SECRETS_MANAGER_REGION?: string;
-
-    @IsOptional()
-    @IsString()
-    VAULT_URL?: string;
-
-    @IsOptional()
-    @IsString()
-    VAULT_TOKEN?: string;
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {
@@ -154,10 +122,6 @@ export const environmentConfig = () => ({
         format: process.env.LOG_FORMAT || 'json',
     },
 
-    monitoring: {
-        sentryDsn: process.env.SENTRY_DSN,
-    },
-
     cache: {
         redisUrl: process.env.REDIS_URL,
     },
@@ -165,22 +129,6 @@ export const environmentConfig = () => ({
     rateLimit: {
         ttl: parseInt(process.env.RATE_LIMIT_TTL || '60000', 10),
         max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
-    },
-
-    security: {
-        encryptionKey: process.env.ENCRYPTION_KEY,
-    },
-
-    aws: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-        region: process.env.AWS_REGION || 'us-east-1',
-        secretsManagerRegion: process.env.SECRETS_MANAGER_REGION,
-    },
-
-    vault: {
-        url: process.env.VAULT_URL,
-        token: process.env.VAULT_TOKEN,
     },
 });
 

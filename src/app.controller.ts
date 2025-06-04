@@ -39,12 +39,11 @@ export class AppController {
     },
   })
   getHealth(): object {
+    const appHealth = this.appService.getHealth();
     return {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
+      ...appHealth,
       service: 'simple-todo-app',
       version: '0.0.1',
-      ...this.appService.getHealthStatus(),
     };
   }
 }

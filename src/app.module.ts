@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { environmentConfig, validateEnvironment } from './common/config/app.config';
 import { AppBootstrapService } from './common/services/app-bootstrap.service';
+import { PrismaModule } from './common/services/prisma.module';
 import { SecretsService } from './common/services/secrets.service';
 import { InvitationsModule } from './invitations/invitations.module';
 import { ListSharesModule } from './list-shares/list-shares.module';
@@ -47,6 +48,7 @@ import { WebSocketsModule } from './websockets/websockets.module';
         limit: 1000, // 1000 requests per hour
       },
     ]),
+    PrismaModule,
     AuthModule,
     UsersModule,
     ListsModule,

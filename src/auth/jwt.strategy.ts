@@ -2,19 +2,20 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { AppConfig } from '../common/config/app.config';
 import { PrismaService } from '../common/services/prisma.service';
 import { JwtPayload } from './dto';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
     constructor(
-        private configService: ConfigService,
+        private configService: ConfigService<AppConfig>,
         private prisma: PrismaService,
     ) {
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+            secretOrKey: configService.get('jwt.secret', { infer: true }) || 'fallback-secret',
         });
     }
 

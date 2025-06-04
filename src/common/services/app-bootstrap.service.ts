@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AppConfig } from '../config/app.config';
 import { SecretsService } from './secrets.service';
 
 @Injectable()
@@ -7,7 +8,7 @@ export class AppBootstrapService implements OnModuleInit {
     private readonly logger = new Logger(AppBootstrapService.name);
 
     constructor(
-        private readonly configService: ConfigService,
+        private readonly configService: ConfigService<AppConfig>,
         private readonly secretsService: SecretsService,
     ) { }
 
@@ -30,10 +31,10 @@ export class AppBootstrapService implements OnModuleInit {
             ];
 
             // Validate required secrets are available
-            await this.secretsService.validateRequiredSecrets(requiredSecrets);
+            this.secretsService.validateRequiredSecrets(requiredSecrets);
 
             // Additional validation for production environment
-            const nodeEnv = this.configService.get<string>('NODE_ENV');
+            const nodeEnv = this.configService.get('environment', { infer: true });
             if (nodeEnv === 'production') {
                 await this.validateProductionEnvironment();
             }
@@ -53,11 +54,11 @@ export class AppBootstrapService implements OnModuleInit {
 
         const productionRequirements = [
             { key: 'JWT_SECRET', minLength: 32, description: 'JWT secret should be at least 32 characters' },
-            { key: 'DATABASE_URL', pattern: /^postgresql:\/\//, description: 'Database URL should be PostgreSQL' },
+            { key: 'DATABASE_URL', pattern: /^(postgresql|sqlite):\/\//, description: 'Database URL should be PostgreSQL or SQLite' },
         ];
 
         for (const requirement of productionRequirements) {
-            const value = await this.secretsService.getSecret(requirement.key);
+            const value = this.secretsService.getSecret(requirement.key);
 
             if (!value) {
                 throw new Error(`Production requirement failed: ${requirement.key} is missing`);
@@ -74,14 +75,11 @@ export class AppBootstrapService implements OnModuleInit {
 
         // Warn about missing optional production configurations
         const optionalProductionConfigs = [
-            'SENTRY_DSN',
             'REDIS_URL',
-            'AWS_ACCESS_KEY_ID',
-            'ENCRYPTION_KEY',
         ];
 
         for (const config of optionalProductionConfigs) {
-            const value = await this.secretsService.getSecret(config);
+            const value = this.secretsService.getSecret(config);
             if (!value) {
                 this.logger.warn(`⚠️  Optional production config missing: ${config}`);
             }
@@ -94,9 +92,9 @@ export class AppBootstrapService implements OnModuleInit {
      * Log environment information (without sensitive data)
      */
     private async logEnvironmentInfo(): Promise<void> {
-        const nodeEnv = this.configService.get<string>('NODE_ENV');
-        const port = this.configService.get<number>('PORT');
-        const logLevel = this.configService.get<string>('logging.level');
+        const nodeEnv = this.configService.get('environment', { infer: true });
+        const port = this.configService.get('port', { infer: true });
+        const logLevel = this.configService.get('logging.level', { infer: true });
 
         this.logger.log('🚀 Application Configuration:');
         this.logger.log(`   Environment: ${nodeEnv}`);
@@ -104,20 +102,20 @@ export class AppBootstrapService implements OnModuleInit {
         this.logger.log(`   Log Level: ${logLevel}`);
 
         // Database connection status (without revealing URL)
-        const databaseUrl = await this.secretsService.getSecret('DATABASE_URL');
+        const databaseUrl = this.secretsService.getSecret('DATABASE_URL');
         if (databaseUrl) {
             const dbHost = this.extractHostFromUrl(databaseUrl);
             this.logger.log(`   Database: Connected to ${dbHost || 'configured'}`);
         }
 
         // JWT configuration status
-        const jwtSecret = await this.secretsService.getSecret('JWT_SECRET');
+        const jwtSecret = this.secretsService.getSecret('JWT_SECRET');
         if (jwtSecret) {
             this.logger.log(`   JWT: Configured (length: ${jwtSecret.length} chars)`);
         }
 
         // CORS configuration
-        const corsOrigin = this.configService.get<string[]>('cors.origin');
+        const corsOrigin = this.configService.get('cors.origin', { infer: true });
         if (corsOrigin && corsOrigin.length > 0) {
             this.logger.log(`   CORS: ${corsOrigin.length} origin(s) configured`);
         }
@@ -139,12 +137,12 @@ export class AppBootstrapService implements OnModuleInit {
      * Perform health check to ensure application is ready
      */
     async healthCheck(): Promise<{ status: string; timestamp: string; environment: string }> {
-        const nodeEnv = this.configService.get<string>('NODE_ENV');
+        const nodeEnv = this.configService.get('environment', { infer: true });
 
         try {
             // Verify critical secrets are still available
-            await this.secretsService.getSecret('JWT_SECRET');
-            await this.secretsService.getSecret('DATABASE_URL');
+            this.secretsService.getSecret('JWT_SECRET');
+            this.secretsService.getSecret('DATABASE_URL');
 
             return {
                 status: 'healthy',

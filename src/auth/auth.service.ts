@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { AppConfig } from '../common/config/app.config';
 import { PrismaService } from '../common/services/prisma.service';
 import { AuthResponse, JwtPayload, LoginDto, RegisterDto } from './dto';
 
@@ -16,7 +17,7 @@ export class AuthService {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService,
-        private configService: ConfigService,
+        private configService: ConfigService<AppConfig>,
     ) { }
 
     async register(registerDto: RegisterDto): Promise<AuthResponse> {
@@ -96,9 +97,7 @@ export class AuthService {
 
     async refreshToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
         try {
-            const payload = this.jwtService.verify(refreshToken, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret',
-            });
+            const payload = await this.verifyRefreshToken(refreshToken);
 
             // Verify user still exists
             const user = await this.prisma.user.findUnique({
@@ -125,12 +124,12 @@ export class AuthService {
 
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get<string>('JWT_SECRET') || 'your-secret-key',
-                expiresIn: '15m',
+                secret: this.configService.get('jwt.secret', { infer: true }),
+                expiresIn: this.configService.get('jwt.expiresIn', { infer: true }),
             }),
             this.jwtService.signAsync(payload, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret',
-                expiresIn: '7d',
+                secret: this.configService.get('jwt.secret', { infer: true }),
+                expiresIn: this.configService.get('jwt.refreshExpiresIn', { infer: true }),
             }),
         ]);
 
@@ -158,4 +157,15 @@ export class AuthService {
 
         return user;
     }
+
+    private async verifyRefreshToken(token: string): Promise<any> {
+        try {
+            return await this.jwtService.verifyAsync(token, {
+                secret: this.configService.get('jwt.secret', { infer: true }),
+            });
+        } catch {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+    }
+
 }
