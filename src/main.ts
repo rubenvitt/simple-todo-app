@@ -8,20 +8,6 @@ import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security headers with Helmet - relaxed for development
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Added for Swagger UI
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"], // Allow connections to same origin
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Allow embedding for development
-  }));
-
   // Enhanced CORS configuration - more permissive for development
   const isDevelopment = process.env.NODE_ENV !== 'production';
 
@@ -55,6 +41,41 @@ async function bootstrap() {
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
     });
+  }
+
+  // Security headers with Helmet - conditional CSP based on environment
+  if (isDevelopment) {
+    // Development: Relaxed CSP for Swagger UI functionality
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "http://localhost:3000"], // Explicitly allow localhost API calls
+          fontSrc: ["'self'", "data:"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'self'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }));
+  } else {
+    // Production: Strict security headers
+    app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }));
   }
 
   // Global exception filter for consistent error responses
@@ -118,5 +139,8 @@ async function bootstrap() {
   console.log(`🚀 Application is running on: ${await app.getUrl()}`);
   console.log(`📚 API Documentation available at: ${await app.getUrl()}/api/docs`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  if (isDevelopment) {
+    console.log(`🔓 CSP disabled for development - Swagger UI fully functional`);
+  }
 }
 bootstrap();

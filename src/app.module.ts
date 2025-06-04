@@ -6,6 +6,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { environmentConfig, validateEnvironment } from './common/config/app.config';
+import { AppBootstrapService } from './common/services/app-bootstrap.service';
+import { SecretsService } from './common/services/secrets.service';
 import { InvitationsModule } from './invitations/invitations.module';
 import { ListSharesModule } from './list-shares/list-shares.module';
 import { ListsModule } from './lists/lists.module';
@@ -19,6 +22,12 @@ import { WebSocketsModule } from './websockets/websockets.module';
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [environmentConfig],
+      validate: validateEnvironment,
+      validationOptions: {
+        allowUnknown: false,
+        abortEarly: true,
+      },
     }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
@@ -50,10 +59,13 @@ import { WebSocketsModule } from './websockets/websockets.module';
   controllers: [AppController],
   providers: [
     AppService,
+    SecretsService,
+    AppBootstrapService,
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
   ],
+  exports: [SecretsService],
 })
 export class AppModule {}

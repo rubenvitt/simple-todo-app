@@ -26,6 +26,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
             status = exception.getStatus();
             const exceptionResponse = exception.getResponse();
 
+            if (status === 404) {
+                return;
+            }
+
             if (typeof exceptionResponse === 'string') {
                 message = exceptionResponse;
                 error = exception.name;
