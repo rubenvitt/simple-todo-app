@@ -2,10 +2,17 @@ import {
   ExecutionContext,
   Injectable,
   Logger,
-  TooManyRequestsException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerLimitDetail } from '@nestjs/throttler';
+import { Reflector } from '@nestjs/core';
+import {
+  ThrottlerGuard,
+  ThrottlerModuleOptions,
+  ThrottlerStorage,
+  ThrottlerRequest,
+} from '@nestjs/throttler';
 import { Request } from 'express';
 
 @Injectable()
@@ -14,8 +21,13 @@ export class EnhancedRateLimitGuard extends ThrottlerGuard {
   private readonly suspiciousIps = new Map<string, number>();
   private readonly blockedIps = new Set<string>();
 
-  constructor(private readonly configService: ConfigService) {
-    super();
+  constructor(
+    options: ThrottlerModuleOptions,
+    storageService: ThrottlerStorage,
+    reflector: Reflector,
+    private readonly configService: ConfigService,
+  ) {
+    super(options, storageService, reflector);
   }
 
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
@@ -25,8 +37,9 @@ export class EnhancedRateLimitGuard extends ThrottlerGuard {
     // Check if IP is blocked
     if (this.blockedIps.has(clientIp)) {
       this.logger.warn(`Blocked IP attempted access: ${clientIp}`);
-      throw new TooManyRequestsException(
+      throw new HttpException(
         'IP temporarily blocked due to suspicious activity',
+        HttpStatus.TOO_MANY_REQUESTS,
       );
     }
 
@@ -34,21 +47,13 @@ export class EnhancedRateLimitGuard extends ThrottlerGuard {
   }
 
   protected async handleRequest(
-    context: ExecutionContext,
-    limit: number,
-    ttl: number,
-    throttler: ThrottlerLimitDetail,
+    requestProps: ThrottlerRequest,
   ): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = requestProps.context.switchToHttp().getRequest<Request>();
     const clientIp = this.getClientIp(request);
 
     try {
-      const canProceed = await super.handleRequest(
-        context,
-        limit,
-        ttl,
-        throttler,
-      );
+      const canProceed = await super.handleRequest(requestProps);
 
       if (!canProceed) {
         this.trackSuspiciousActivity(clientIp);

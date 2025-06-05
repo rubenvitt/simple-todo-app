@@ -51,8 +51,8 @@ describe('Rate Limiting (e2e)', () => {
         });
 
       // Should have rate limiting headers
-      expect(response.headers).toHaveProperty('x-ratelimit-limit');
-      expect(response.headers).toHaveProperty('x-ratelimit-remaining');
+      expect(response.headers).toHaveProperty('x-ratelimit-limit-auth');
+      expect(response.headers).toHaveProperty('x-ratelimit-remaining-auth');
     });
   });
 
@@ -65,9 +65,11 @@ describe('Rate Limiting (e2e)', () => {
           email: 'admin@example.com',
           password: 'SecurePassword123!',
           username: 'admin',
-        });
+        })
+        .expect(201);
 
       const token = authResponse.body.access_token;
+      expect(token).toBeDefined();
 
       const response = await request(app.getHttpServer())
         .get('/monitoring/security/rate-limits')
@@ -88,9 +90,11 @@ describe('Rate Limiting (e2e)', () => {
           email: 'admin2@example.com',
           password: 'SecurePassword123!',
           username: 'admin2',
-        });
+        })
+        .expect(201);
 
       const token = authResponse.body.access_token;
+      expect(token).toBeDefined();
 
       const response = await request(app.getHttpServer())
         .get('/monitoring/security/ddos-protection')

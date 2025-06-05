@@ -101,6 +101,7 @@ export class PrismaService
     status: string;
     timestamp: string;
     query_time_ms?: number;
+    error?: string;
   }> {
     try {
       const startTime = Date.now();
@@ -119,6 +120,7 @@ export class PrismaService
       return {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
+        error: errorMessage,
       };
     }
   }
@@ -229,6 +231,7 @@ export class PrismaService
     );
   }
 
+
   /**
    * Optimized create with performance tracking
    */
@@ -305,12 +308,12 @@ export class PrismaService
     };
   }
 
-  private isConnectionError(error: any): boolean {
+  public isConnectionError(error: any): boolean {
     const connectionErrorMessages = [
       'connection',
-      'connect ECONNREFUSED',
+      'connect',
       'timeout',
-      'ENOTFOUND',
+      'enotfound',
       'network',
       'pool',
     ];

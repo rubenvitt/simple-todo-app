@@ -3,7 +3,15 @@ import 'reflect-metadata';
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
-process.env.DATABASE_URL = 'file:./test.db';
+process.env.DATABASE_URL = 'postgresql://todo_user:todo_password@localhost:9001/todo_test';
+
+// Completely disable rate limits for testing
+process.env.RATE_LIMIT_AUTH_MAX = '999999';
+process.env.RATE_LIMIT_AUTH_TTL = '999999999';
+process.env.RATE_LIMIT_API_MAX = '999999';
+process.env.RATE_LIMIT_API_TTL = '999999999';
+process.env.RATE_LIMIT_MAX = '999999';
+process.env.RATE_LIMIT_TTL = '999999999';
 
 // Mock bcrypt for consistent testing
 jest.mock('bcrypt', () => ({
@@ -13,6 +21,24 @@ jest.mock('bcrypt', () => ({
     compare: jest.fn().mockImplementation((password: string, hash: string) =>
         Promise.resolve(hash === `hashed_${password}`)
     ),
+}));
+
+// Mock rate limiting guards for testing
+jest.mock('@nestjs/throttler', () => ({
+    ThrottlerGuard: jest.fn().mockImplementation(() => ({
+        canActivate: jest.fn().mockResolvedValue(true),
+    })),
+    ThrottlerModule: {
+        forRootAsync: jest.fn(() => ({
+            module: class MockThrottlerModule {},
+        })),
+    },
+}));
+
+jest.mock('../src/common/guards/enhanced-rate-limit.guard', () => ({
+    EnhancedRateLimitGuard: jest.fn().mockImplementation(() => ({
+        canActivate: jest.fn().mockResolvedValue(true),
+    })),
 }));
 
 // Global test utilities
@@ -45,9 +71,8 @@ const { execSync } = require('child_process');
 beforeAll(async () => {
     // Ensure test database is clean
     try {
-        execSync('rm -f ./test.db', { stdio: 'ignore' });
         execSync('npx prisma migrate deploy', {
-            env: { ...process.env, DATABASE_URL: 'file:./test.db' },
+            env: { ...process.env, DATABASE_URL: 'postgresql://todo_user:todo_password@localhost:9001/todo_test' },
             stdio: 'ignore'
         });
     } catch (error) {
@@ -56,10 +81,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    // Clean up test database
-    try {
-        execSync('rm -f ./test.db', { stdio: 'ignore' });
-    } catch (error) {
-        console.warn('Warning: Could not clean up test database:', error instanceof Error ? error.message : String(error));
-    }
+    // Test database cleanup is handled by docker-compose down
+    // No additional cleanup needed for PostgreSQL test database
 }); 

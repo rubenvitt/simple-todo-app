@@ -9,7 +9,7 @@ export class TestDatabase {
         this.prisma = new PrismaClient({
             datasources: {
                 db: {
-                    url: 'file:./test.db'
+                    url: 'postgresql://todo_user:todo_password@localhost:9001/todo_test'
                 }
             }
         });
@@ -114,9 +114,8 @@ export class TestDatabase {
 
     static async resetDatabase(): Promise<void> {
         try {
-            execSync('rm -f ./test.db', { stdio: 'ignore' });
             execSync('npx prisma migrate deploy', {
-                env: { ...process.env, DATABASE_URL: 'file:./test.db' },
+                env: { ...process.env, DATABASE_URL: 'postgresql://todo_user:todo_password@localhost:9001/todo_test' },
                 stdio: 'ignore'
             });
         } catch (error) {

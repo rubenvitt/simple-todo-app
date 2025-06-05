@@ -9,6 +9,17 @@ describe('Authentication (e2e)', () => {
     let testDb: TestDatabase;
 
     beforeAll(async () => {
+        // Ensure test environment variables are set before module creation
+        process.env.NODE_ENV = 'test';
+        process.env.DATABASE_URL = 'postgresql://todo_user:todo_password@localhost:9001/todo_test';
+        process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+        
+        // Set very high rate limits for testing
+        process.env.RATE_LIMIT_AUTH_MAX = '100000';
+        process.env.RATE_LIMIT_AUTH_TTL = '3600000';
+        process.env.RATE_LIMIT_API_MAX = '100000'; 
+        process.env.RATE_LIMIT_MAX = '100000';
+        
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
         }).compile();
@@ -39,7 +50,9 @@ describe('Authentication (e2e)', () => {
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         });
 
-        app.useGlobalFilters(new AllExceptionsFilter());
+        const { AppLoggerService } = await import('../src/common/services/logger.service');
+        const loggerService = app.get(AppLoggerService);
+        app.useGlobalFilters(new AllExceptionsFilter(loggerService));
         app.useGlobalPipes(
             new ValidationPipe({
                 whitelist: true,
@@ -118,7 +131,7 @@ describe('Authentication (e2e)', () => {
                 .send(weakPasswordDto)
                 .expect(400)
                 .expect((res) => {
-                    expect(res.body.message).toContain('password must be longer than or equal to 6 characters');
+                    expect(res.body.message).toContain('password must be longer than or equal to 8 characters');
                 });
         });
 

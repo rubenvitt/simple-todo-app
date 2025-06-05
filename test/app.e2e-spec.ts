@@ -20,6 +20,8 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer())
       .get('/')
       .expect(200)
-      .expect('Hello World!');
+      .expect((res) => {
+        expect(res.text).toMatch(/Hello World! Running on port \d+ in test mode\./);
+      });
   });
 });

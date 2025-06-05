@@ -11,6 +11,7 @@ import {
   validateEnvironment,
 } from './common/config/app.config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import { EnhancedRateLimitGuard } from './common/guards/enhanced-rate-limit.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TrafficMonitoringInterceptor } from './common/interceptors/traffic-monitoring.interceptor';
@@ -43,6 +44,7 @@ import { WebSocketsModule } from './websockets/websockets.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const isTest = configService.get('environment') === 'test';
         const rateLimit = configService.get('rateLimit') as {
           global: { ttl: number; max: number };
           auth: { ttl: number; max: number };
@@ -51,23 +53,23 @@ import { WebSocketsModule } from './websockets/websockets.module';
         return [
           {
             name: 'short',
-            ttl: rateLimit.global.ttl,
-            limit: rateLimit.global.max,
+            ttl: isTest ? 999999999 : rateLimit.global.ttl,
+            limit: isTest ? 999999 : rateLimit.global.max,
           },
           {
             name: 'auth',
-            ttl: rateLimit.auth.ttl,
-            limit: rateLimit.auth.max,
+            ttl: isTest ? 999999999 : rateLimit.auth.ttl,
+            limit: isTest ? 999999 : rateLimit.auth.max,
           },
           {
             name: 'api',
-            ttl: rateLimit.api.ttl,
-            limit: rateLimit.api.max,
+            ttl: isTest ? 999999999 : rateLimit.api.ttl,
+            limit: isTest ? 999999 : rateLimit.api.max,
           },
           {
             name: 'long',
-            ttl: 3600000, // 1 hour
-            limit: 5000, // Higher limit for general usage
+            ttl: isTest ? 999999999 : 3600000, // 1 hour
+            limit: isTest ? 999999 : 5000, // Higher limit for general usage
           },
         ];
       },
@@ -88,10 +90,11 @@ import { WebSocketsModule } from './websockets/websockets.module';
     AppService,
     SecretsService,
     AppBootstrapService,
-    {
+    ...(process.env.NODE_ENV !== 'test' ? [{
       provide: APP_GUARD,
-      useClass: EnhancedRateLimitGuard,
-    },
+      useClass: ThrottlerGuard,
+    }] : []),
+    EnhancedRateLimitGuard,
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,

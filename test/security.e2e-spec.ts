@@ -17,6 +17,7 @@ describe('Security Middleware (e2e)', () => {
         const { ValidationPipe } = await import('@nestjs/common');
         const helmet = await import('helmet');
         const { AllExceptionsFilter } = await import('../src/common/filters/all-exceptions.filter');
+        const { AppLoggerService } = await import('../src/common/services/logger.service');
 
         app.use(helmet.default({
             contentSecurityPolicy: {
@@ -37,7 +38,8 @@ describe('Security Middleware (e2e)', () => {
             allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
         });
 
-        app.useGlobalFilters(new AllExceptionsFilter());
+        const logger = app.get(AppLoggerService);
+        app.useGlobalFilters(new AllExceptionsFilter(logger));
         app.useGlobalPipes(
             new ValidationPipe({
                 whitelist: true,

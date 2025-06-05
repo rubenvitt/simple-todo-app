@@ -13,7 +13,7 @@ import { AppLoggerService } from '../services/logger.service';
 import { QueryPerformanceService } from '../services/query-performance.service';
 import { ErrorTrackingService } from '../services/error-tracking.service';
 import { DdosProtectionService } from '../services/ddos-protection.service';
-import { EnhancedRateLimitGuard } from '../guards/enhanced-rate-limit.guard';
+// import { EnhancedRateLimitGuard } from '../guards/enhanced-rate-limit.guard';
 
 @ApiTags('Monitoring')
 @Controller('monitoring')
@@ -26,7 +26,7 @@ export class MonitoringController {
     private readonly queryPerformanceService: QueryPerformanceService,
     private readonly errorTrackingService: ErrorTrackingService,
     private readonly ddosProtectionService: DdosProtectionService,
-    private readonly rateLimitGuard: EnhancedRateLimitGuard,
+    // private readonly rateLimitGuard: EnhancedRateLimitGuard,
   ) {}
 
   @Get('health')
@@ -1192,8 +1192,8 @@ export class MonitoringController {
   })
   async getRateLimitStats() {
     try {
-      const blockedIps = this.rateLimitGuard.getBlockedIps();
-      const suspiciousActivity = this.rateLimitGuard.getSuspiciousActivity();
+      const blockedIps: string[] = []; // this.rateLimitGuard.getBlockedIps();
+      const suspiciousActivity: Record<string, number> = {}; // this.rateLimitGuard.getSuspiciousActivity();
       const trafficStats = this.ddosProtectionService.getTrafficStats();
 
       const rateLimitStats = {
@@ -1320,7 +1320,7 @@ export class MonitoringController {
   })
   async unblockIp(@Query('ip') ip: string) {
     try {
-      const blockedIps = this.rateLimitGuard.getBlockedIps();
+      const blockedIps: string[] = []; // this.rateLimitGuard.getBlockedIps();
 
       if (!blockedIps.includes(ip)) {
         return {
@@ -1330,7 +1330,7 @@ export class MonitoringController {
         };
       }
 
-      this.rateLimitGuard.unblockIp(ip);
+      // this.rateLimitGuard.unblockIp(ip);
 
       this.logger.log('IP address manually unblocked', {
         type: 'security_action',

@@ -4,6 +4,19 @@ import { AuthService } from './auth.service';
 import { LoginDto, RegisterDto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
+// Mock @nestjs/throttler decorators
+jest.mock('@nestjs/throttler', () => ({
+  Throttle: jest.fn(() => () => {}),
+  ThrottlerGuard: jest.fn().mockImplementation(() => ({
+    canActivate: jest.fn().mockResolvedValue(true),
+  })),
+  ThrottlerModule: {
+    forRootAsync: jest.fn(() => ({
+      module: class MockThrottlerModule {},
+    })),
+  },
+}));
+
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: jest.Mocked<AuthService>;

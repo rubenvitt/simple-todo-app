@@ -33,8 +33,8 @@ describe('AppService', () => {
     it('should return hello message with port and environment in development', () => {
       configService.get.mockImplementation(
         (key: string, defaultValue?: any) => {
-          if (key === 'PORT') return 3000;
-          if (key === 'NODE_ENV') return 'development';
+          if (key === 'port') return 3000;
+          if (key === 'environment') return 'development';
           return defaultValue;
         },
       );
@@ -44,15 +44,15 @@ describe('AppService', () => {
       expect(result).toBe(
         'Hello World! Running on port 3000 in development mode.',
       );
-      expect(configService.get).toHaveBeenCalledWith('PORT', 3000);
-      expect(configService.get).toHaveBeenCalledWith('NODE_ENV', 'development');
+      expect(configService.get).toHaveBeenCalledWith('port', { infer: true });
+      expect(configService.get).toHaveBeenCalledWith('environment', { infer: true });
     });
 
     it('should return hello message with default port when port is not configured', () => {
       configService.get.mockImplementation(
         (key: string, defaultValue?: any) => {
-          if (key === 'PORT') return defaultValue;
-          if (key === 'NODE_ENV') return 'test';
+          if (key === 'port') return 3000;
+          if (key === 'environment') return 'test';
           return defaultValue;
         },
       );
@@ -60,14 +60,14 @@ describe('AppService', () => {
       const result = service.getHello();
 
       expect(result).toBe('Hello World! Running on port 3000 in test mode.');
-      expect(configService.get).toHaveBeenCalledWith('PORT', 3000);
+      expect(configService.get).toHaveBeenCalledWith('port', { infer: true });
     });
 
     it('should return hello message with production environment', () => {
       configService.get.mockImplementation(
         (key: string, defaultValue?: any) => {
-          if (key === 'PORT') return 8080;
-          if (key === 'NODE_ENV') return 'production';
+          if (key === 'port') return 8080;
+          if (key === 'environment') return 'production';
           return defaultValue;
         },
       );
@@ -80,75 +80,76 @@ describe('AppService', () => {
     });
   });
 
-  describe('getHealthStatus', () => {
+  describe('getHealth', () => {
     it('should return health status with correct structure', () => {
       configService.get.mockReturnValue('test');
+      const mockUptime = 123.456;
+      jest.spyOn(process, 'uptime').mockReturnValue(mockUptime);
 
-      const result = service.getHealthStatus();
+      const result = service.getHealth();
 
       expect(result).toEqual({
-        dependencies: {
-          nestjs: '^11.0.1',
-          config: '^4.0.2',
-        },
-        modules: {
-          auth: 'loaded',
-          users: 'loaded',
-          lists: 'loaded',
-          tasks: 'loaded',
-          notifications: 'loaded',
-        },
+        status: 'ok',
+        timestamp: expect.any(String),
         environment: 'test',
+        uptime: mockUptime,
       });
     });
 
     it('should return correct environment from config', () => {
       configService.get.mockReturnValue('production');
 
-      const result = service.getHealthStatus() as any;
+      const result = service.getHealth();
 
       expect(result.environment).toBe('production');
-      expect(result.dependencies).toBeDefined();
-      expect(result.modules).toBeDefined();
+      expect(result.status).toBe('ok');
+      expect(result.timestamp).toBeDefined();
+      expect(result.uptime).toBeDefined();
     });
 
     it('should return default environment when not configured', () => {
       configService.get.mockImplementation(
         (key: string, defaultValue?: any) => {
-          if (key === 'NODE_ENV') return defaultValue;
+          if (key === 'environment') return 'development';
           return defaultValue;
         },
       );
 
-      const result = service.getHealthStatus() as any;
+      const result = service.getHealth();
 
       expect(result.environment).toBe('development');
-      expect(configService.get).toHaveBeenCalledWith('NODE_ENV', 'development');
+    });
+  });
+
+  describe('getConfig', () => {
+    it('should return application configuration', () => {
+      configService.get.mockReturnValue('development');
+
+      const result = service.getConfig();
+
+      expect(result).toEqual({
+        environment: 'development',
+        version: process.env.npm_package_version || '1.0.0',
+        nodeVersion: process.version,
+      });
+
+      expect(configService.get).toHaveBeenCalledWith('environment', { infer: true });
     });
 
-    it('should always include required modules status', () => {
+    it('should use default version when npm_package_version is not set', () => {
+      const originalVersion = process.env.npm_package_version;
+      delete process.env.npm_package_version;
+
       configService.get.mockReturnValue('test');
 
-      const result = service.getHealthStatus() as any;
+      const result = service.getConfig();
 
-      expect(result.modules).toEqual({
-        auth: 'loaded',
-        users: 'loaded',
-        lists: 'loaded',
-        tasks: 'loaded',
-        notifications: 'loaded',
-      });
-    });
+      expect(result.version).toBe('1.0.0');
 
-    it('should include dependency information', () => {
-      configService.get.mockReturnValue('test');
-
-      const result = service.getHealthStatus() as any;
-
-      expect(result.dependencies).toEqual({
-        nestjs: '^11.0.1',
-        config: '^4.0.2',
-      });
+      // Restore original value
+      if (originalVersion !== undefined) {
+        process.env.npm_package_version = originalVersion;
+      }
     });
   });
 });

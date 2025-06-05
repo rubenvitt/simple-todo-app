@@ -158,20 +158,28 @@ describe('AppConfig', () => {
 
       const config = environmentConfig();
 
-      expect(config.rateLimit.ttl).toBe(120000);
-      expect(config.rateLimit.max).toBe(200);
+      expect(config.rateLimit.global.ttl).toBe(120000);
+      expect(config.rateLimit.global.max).toBe(200);
     });
 
-    it('should handle AWS configuration', () => {
-      process.env.AWS_ACCESS_KEY_ID = 'test-access-key';
-      process.env.AWS_SECRET_ACCESS_KEY = 'test-secret-key';
-      process.env.AWS_REGION = 'eu-west-1';
+    it('should handle rate limit auth configuration', () => {
+      process.env.RATE_LIMIT_AUTH_TTL = '600000';
+      process.env.RATE_LIMIT_AUTH_MAX = '20';
 
       const config = environmentConfig();
 
-      expect(config.aws.accessKeyId).toBe('test-access-key');
-      expect(config.aws.secretAccessKey).toBe('test-secret-key');
-      expect(config.aws.region).toBe('eu-west-1');
+      expect(config.rateLimit.auth.ttl).toBe(600000);
+      expect(config.rateLimit.auth.max).toBe(20);
+    });
+
+    it('should handle rate limit api configuration', () => {
+      process.env.RATE_LIMIT_API_TTL = '30000';
+      process.env.RATE_LIMIT_API_MAX = '500';
+
+      const config = environmentConfig();
+
+      expect(config.rateLimit.api.ttl).toBe(30000);
+      expect(config.rateLimit.api.max).toBe(500);
     });
   });
 });
