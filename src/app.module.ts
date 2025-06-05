@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -11,7 +11,9 @@ import {
   validateEnvironment,
 } from './common/config/app.config';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { EnhancedRateLimitGuard } from './common/guards/enhanced-rate-limit.guard';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TrafficMonitoringInterceptor } from './common/interceptors/traffic-monitoring.interceptor';
 import { MonitoringModule } from './common/monitoring.module';
 import { AppBootstrapService } from './common/services/app-bootstrap.service';
 import { PrismaModule } from './common/services/prisma.module';
@@ -37,23 +39,39 @@ import { WebSocketsModule } from './websockets/websockets.module';
       },
     }),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([
-      {
-        name: 'short',
-        ttl: 60000, // 1 minute in milliseconds
-        limit: 100, // 100 requests per minute
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const rateLimit = configService.get('rateLimit') as {
+          global: { ttl: number; max: number };
+          auth: { ttl: number; max: number };
+          api: { ttl: number; max: number };
+        };
+        return [
+          {
+            name: 'short',
+            ttl: rateLimit.global.ttl,
+            limit: rateLimit.global.max,
+          },
+          {
+            name: 'auth',
+            ttl: rateLimit.auth.ttl,
+            limit: rateLimit.auth.max,
+          },
+          {
+            name: 'api',
+            ttl: rateLimit.api.ttl,
+            limit: rateLimit.api.max,
+          },
+          {
+            name: 'long',
+            ttl: 3600000, // 1 hour
+            limit: 5000, // Higher limit for general usage
+          },
+        ];
       },
-      {
-        name: 'medium',
-        ttl: 300000, // 5 minutes in milliseconds
-        limit: 300, // 300 requests per 5 minutes
-      },
-      {
-        name: 'long',
-        ttl: 3600000, // 1 hour in milliseconds
-        limit: 1000, // 1000 requests per hour
-      },
-    ]),
+    }),
     MonitoringModule,
     PrismaModule,
     AuthModule,
@@ -72,11 +90,15 @@ import { WebSocketsModule } from './websockets/websockets.module';
     AppBootstrapService,
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: EnhancedRateLimitGuard,
     },
     {
       provide: APP_INTERCEPTOR,
       useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TrafficMonitoringInterceptor,
     },
     {
       provide: APP_FILTER,

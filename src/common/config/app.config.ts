@@ -80,6 +80,26 @@ class EnvironmentVariables {
   @IsNumber()
   @Transform(({ value }) => parseInt(value, 10))
   RATE_LIMIT_MAX?: number = 100;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value, 10))
+  RATE_LIMIT_AUTH_TTL?: number = 300000;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value, 10))
+  RATE_LIMIT_AUTH_MAX?: number = 10;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value, 10))
+  RATE_LIMIT_API_TTL?: number = 60000;
+
+  @IsOptional()
+  @IsNumber()
+  @Transform(({ value }) => parseInt(value, 10))
+  RATE_LIMIT_API_MAX?: number = 1000;
 }
 
 export function validateEnvironment(config: Record<string, unknown>) {
@@ -141,8 +161,18 @@ export const environmentConfig = () => ({
   },
 
   rateLimit: {
-    ttl: parseInt(process.env.RATE_LIMIT_TTL || '60000', 10),
-    max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+    global: {
+      ttl: parseInt(process.env.RATE_LIMIT_TTL || '60000', 10),
+      max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10),
+    },
+    auth: {
+      ttl: parseInt(process.env.RATE_LIMIT_AUTH_TTL || '300000', 10),
+      max: parseInt(process.env.RATE_LIMIT_AUTH_MAX || '10', 10),
+    },
+    api: {
+      ttl: parseInt(process.env.RATE_LIMIT_API_TTL || '60000', 10),
+      max: parseInt(process.env.RATE_LIMIT_API_MAX || '1000', 10),
+    },
   },
 });
 

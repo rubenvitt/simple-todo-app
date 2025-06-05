@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "task-master-ai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "--package=task-master-ai",
+        "task-master-ai"
+      ]
+    },
+    "interactive": {
+      "type": "stdio",
+      "command": "pnpx",
+      "args": [
+        "interactive-mcp"
+      ],
+      "env": {}
+    }
+  }
+}

@@ -9,6 +9,9 @@ import { AppHealthService } from './services/health.service';
 import { AppLoggerService } from './services/logger.service';
 import { PrismaModule } from './services/prisma.module';
 import { QueryPerformanceService } from './services/query-performance.service';
+import { ErrorTrackingService } from './services/error-tracking.service';
+import { DdosProtectionService } from './services/ddos-protection.service';
+import { TrafficMonitoringInterceptor } from './interceptors/traffic-monitoring.interceptor';
 import { UsersModule } from '../users/users.module';
 
 @Global()
@@ -106,12 +109,22 @@ import { UsersModule } from '../users/users.module';
       },
     }),
   ],
-  providers: [AppLoggerService, AppHealthService, QueryPerformanceService],
+  providers: [
+    AppLoggerService,
+    AppHealthService,
+    QueryPerformanceService,
+    ErrorTrackingService,
+    DdosProtectionService,
+    TrafficMonitoringInterceptor,
+  ],
   controllers: [MonitoringController],
   exports: [
     AppLoggerService,
     AppHealthService,
     QueryPerformanceService,
+    ErrorTrackingService,
+    DdosProtectionService,
+    TrafficMonitoringInterceptor,
     WinstonModule,
   ],
 })

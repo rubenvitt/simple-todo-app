@@ -15,6 +15,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { AuthResponse, LoginDto, RegisterDto } from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -26,6 +27,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ auth: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
   @ApiOperation({
     summary: 'Register a new user',
     description: 'Create a new user account with email and password',
@@ -82,6 +84,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 10, ttl: 300000 } }) // 10 attempts per 5 minutes
   @ApiOperation({
     summary: 'User login',
     description:
@@ -138,6 +141,7 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ auth: { limit: 20, ttl: 300000 } }) // 20 attempts per 5 minutes
   @ApiOperation({
     summary: 'Refresh access token',
     description: 'Use refresh token to obtain a new access token',

@@ -11,9 +11,9 @@ import { Request, Response } from 'express';
 import { AppLoggerService } from '../services/logger.service';
 
 @Catch()
-  @Injectable()
+@Injectable()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly logger: AppLoggerService) { }
+  constructor(private readonly logger: AppLoggerService) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();

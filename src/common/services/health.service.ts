@@ -200,10 +200,35 @@ export class AppHealthService extends HealthIndicator {
     try {
       const startTime = Date.now();
 
-      // Test basic connectivity
-      await this.prismaService.$queryRaw`SELECT 1`;
+      // Test basic connectivity with timeout
+      const connectivityPromise = this.prismaService.$queryRaw`SELECT 1`;
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error('Database connection timeout')),
+          5000,
+        ),
+      );
 
-      const responseTime = Date.now() - startTime;
+      await Promise.race([connectivityPromise, timeoutPromise]);
+      const basicResponseTime = Date.now() - startTime;
+
+      // Test transaction capability
+      const transactionStartTime = Date.now();
+      await this.prismaService.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT COUNT(*) FROM "users"`;
+        await tx.$queryRaw`SELECT COUNT(*) FROM "lists"`;
+      });
+      const transactionResponseTime = Date.now() - transactionStartTime;
+
+      // Test connection pool status
+      const poolTestStartTime = Date.now();
+      const poolTests = await Promise.all([
+        this.prismaService.$queryRaw`SELECT version()`,
+        this.prismaService.$queryRaw`SELECT current_timestamp`,
+        this.prismaService
+          .$queryRaw`SELECT pg_database_size(current_database())`,
+      ]);
+      const poolResponseTime = Date.now() - poolTestStartTime;
 
       // Get connection info
       const connectionInfo = await this.prismaService.getConnectionInfo();
@@ -212,24 +237,105 @@ export class AppHealthService extends HealthIndicator {
       const performanceMetrics =
         this.queryPerformanceService.getPerformanceStats();
 
+      // Calculate database metrics
+      const databaseSize =
+        poolTests[2] && Array.isArray(poolTests[2]) && poolTests[2][0]
+          ? Number(poolTests[2][0]?.pg_database_size || 0)
+          : 0;
+      const formattedSize = this.formatBytes(databaseSize);
+
       return {
         status: 'healthy',
-        responseTime,
+        connectivity: {
+          basicQuery: {
+            responseTime: basicResponseTime,
+            status: 'ok',
+          },
+          transactions: {
+            responseTime: transactionResponseTime,
+            status: 'ok',
+          },
+          connectionPool: {
+            responseTime: poolResponseTime,
+            status: 'ok',
+            poolSize: connectionInfo?.activeConnections || 0,
+          },
+        },
+        database: {
+          version:
+            poolTests[0] && Array.isArray(poolTests[0]) && poolTests[0][0]
+              ? poolTests[0][0]?.version || 'unknown'
+              : 'unknown',
+          size: formattedSize,
+          sizeBytes: databaseSize,
+        },
+        performance: {
+          averageResponseTime: Math.round(
+            (basicResponseTime + transactionResponseTime + poolResponseTime) /
+              3,
+          ),
+          ...performanceMetrics,
+        },
         connectionInfo,
-        performanceMetrics,
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
+
+      // Determine error severity and type
+      const errorType = this.classifyDatabaseError(errorMessage);
+
       this.logger.error('Database health check failed', errorStack, {
         type: 'database_health',
+        errorType,
+        severity: errorType === 'connection' ? 'critical' : 'warning',
       });
+
       return {
         status: 'unhealthy',
         error: errorMessage,
+        errorType,
+        lastAttempt: new Date().toISOString(),
+        retryRecommended: errorType !== 'authentication',
       };
     }
+  }
+
+  private classifyDatabaseError(errorMessage: string): string {
+    const lowerError = errorMessage.toLowerCase();
+
+    if (lowerError.includes('timeout') || lowerError.includes('timed out')) {
+      return 'timeout';
+    }
+    if (lowerError.includes('connection') || lowerError.includes('connect')) {
+      return 'connection';
+    }
+    if (lowerError.includes('auth') || lowerError.includes('password')) {
+      return 'authentication';
+    }
+    if (lowerError.includes('database') && lowerError.includes('not exist')) {
+      return 'database_missing';
+    }
+    if (
+      lowerError.includes('permission') ||
+      lowerError.includes('access denied')
+    ) {
+      return 'permission';
+    }
+
+    return 'unknown';
+  }
+
+  private formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 
   private async getApplicationMetrics() {
