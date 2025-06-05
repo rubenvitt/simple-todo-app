@@ -2,7 +2,11 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationType } from '../../generated/prisma';
 import { PrismaService } from '../common/services/prisma.service';
-import { CreateNotificationDto, QueryNotificationsDto, UpdateNotificationDto } from './dto';
+import {
+  CreateNotificationDto,
+  QueryNotificationsDto,
+  UpdateNotificationDto,
+} from './dto';
 import { NotificationsService } from './notifications.service';
 
 describe('NotificationsService', () => {
@@ -67,7 +71,9 @@ describe('NotificationsService', () => {
     };
 
     it('should create a notification successfully', async () => {
-      mockPrismaService.notification.create.mockResolvedValue(mockCreatedNotification);
+      mockPrismaService.notification.create.mockResolvedValue(
+        mockCreatedNotification,
+      );
 
       const result = await service.create(createNotificationDto);
 
@@ -99,7 +105,9 @@ describe('NotificationsService', () => {
         message: 'General notification',
       };
 
-      mockPrismaService.notification.create.mockResolvedValue(mockNotificationWithDefaults);
+      mockPrismaService.notification.create.mockResolvedValue(
+        mockNotificationWithDefaults,
+      );
 
       const result = await service.create(dtoWithDefaults);
 
@@ -132,7 +140,9 @@ describe('NotificationsService', () => {
     ];
 
     it('should return paginated notifications with default query', async () => {
-      mockPrismaService.notification.findMany.mockResolvedValue(mockNotifications);
+      mockPrismaService.notification.findMany.mockResolvedValue(
+        mockNotifications,
+      );
       mockPrismaService.notification.count.mockResolvedValue(2);
 
       const queryDto: QueryNotificationsDto = {};
@@ -171,7 +181,9 @@ describe('NotificationsService', () => {
 
     it('should filter notifications by read status', async () => {
       const unreadNotifications = [mockNotifications[0]];
-      mockPrismaService.notification.findMany.mockResolvedValue(unreadNotifications);
+      mockPrismaService.notification.findMany.mockResolvedValue(
+        unreadNotifications,
+      );
       mockPrismaService.notification.count.mockResolvedValue(1);
 
       const queryDto: QueryNotificationsDto = { read: false };
@@ -190,10 +202,14 @@ describe('NotificationsService', () => {
 
     it('should filter notifications by type', async () => {
       const taskNotifications = [mockNotifications[0]];
-      mockPrismaService.notification.findMany.mockResolvedValue(taskNotifications);
+      mockPrismaService.notification.findMany.mockResolvedValue(
+        taskNotifications,
+      );
       mockPrismaService.notification.count.mockResolvedValue(1);
 
-      const queryDto: QueryNotificationsDto = { type: NotificationType.TASK_ASSIGNMENT };
+      const queryDto: QueryNotificationsDto = {
+        type: NotificationType.TASK_ASSIGNMENT,
+      };
       const result = await service.findAll(userId, queryDto);
 
       expect(mockPrismaService.notification.findMany).toHaveBeenCalledWith({
@@ -204,11 +220,15 @@ describe('NotificationsService', () => {
       });
 
       expect(result.notifications).toHaveLength(1);
-      expect(result.notifications[0].type).toBe(NotificationType.TASK_ASSIGNMENT);
+      expect(result.notifications[0].type).toBe(
+        NotificationType.TASK_ASSIGNMENT,
+      );
     });
 
     it('should handle pagination correctly', async () => {
-      mockPrismaService.notification.findMany.mockResolvedValue([mockNotifications[1]]);
+      mockPrismaService.notification.findMany.mockResolvedValue([
+        mockNotifications[1],
+      ]);
       mockPrismaService.notification.count.mockResolvedValue(2);
 
       const queryDto: QueryNotificationsDto = { page: 2, limit: 1 };
@@ -245,7 +265,9 @@ describe('NotificationsService', () => {
     };
 
     it('should return notification when found and user owns it', async () => {
-      mockPrismaService.notification.findUnique.mockResolvedValue(mockNotification);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        mockNotification,
+      );
 
       const result = await service.findOne(notificationId, userId);
 
@@ -253,11 +275,13 @@ describe('NotificationsService', () => {
         where: { id: notificationId },
       });
 
-      expect(result).toEqual(expect.objectContaining({
-        id: notificationId,
-        userId,
-        type: NotificationType.TASK_ASSIGNMENT,
-      }));
+      expect(result).toEqual(
+        expect.objectContaining({
+          id: notificationId,
+          userId,
+          type: NotificationType.TASK_ASSIGNMENT,
+        }),
+      );
     });
 
     it('should throw NotFoundException when notification not found', async () => {
@@ -276,7 +300,9 @@ describe('NotificationsService', () => {
         ...mockNotification,
         userId: 'other-user',
       };
-      mockPrismaService.notification.findUnique.mockResolvedValue(notificationOwnedByOther);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        notificationOwnedByOther,
+      );
 
       await expect(service.findOne(notificationId, userId)).rejects.toThrow(
         ForbiddenException,
@@ -303,8 +329,12 @@ describe('NotificationsService', () => {
     const mockUpdatedNotification = { ...mockNotification, readStatus: true };
 
     it('should update notification successfully', async () => {
-      mockPrismaService.notification.findUnique.mockResolvedValue(mockNotification);
-      mockPrismaService.notification.update.mockResolvedValue(mockUpdatedNotification);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        mockNotification,
+      );
+      mockPrismaService.notification.update.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
       const result = await service.update(notificationId, userId, updateDto);
 
@@ -319,9 +349,9 @@ describe('NotificationsService', () => {
     it('should throw error when notification not found', async () => {
       mockPrismaService.notification.findUnique.mockResolvedValue(null);
 
-      await expect(service.update(notificationId, userId, updateDto)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.update(notificationId, userId, updateDto),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -337,8 +367,12 @@ describe('NotificationsService', () => {
       };
       const mockUpdatedNotification = { ...mockNotification, readStatus: true };
 
-      mockPrismaService.notification.findUnique.mockResolvedValue(mockNotification);
-      mockPrismaService.notification.update.mockResolvedValue(mockUpdatedNotification);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        mockNotification,
+      );
+      mockPrismaService.notification.update.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
       const result = await service.markAsRead(notificationId, userId);
 
@@ -361,10 +395,17 @@ describe('NotificationsService', () => {
         userId,
         readStatus: true,
       };
-      const mockUpdatedNotification = { ...mockNotification, readStatus: false };
+      const mockUpdatedNotification = {
+        ...mockNotification,
+        readStatus: false,
+      };
 
-      mockPrismaService.notification.findUnique.mockResolvedValue(mockNotification);
-      mockPrismaService.notification.update.mockResolvedValue(mockUpdatedNotification);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        mockNotification,
+      );
+      mockPrismaService.notification.update.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
       const result = await service.markAsUnread(notificationId, userId);
 
@@ -416,7 +457,9 @@ describe('NotificationsService', () => {
     };
 
     it('should delete notification successfully', async () => {
-      mockPrismaService.notification.findUnique.mockResolvedValue(mockNotification);
+      mockPrismaService.notification.findUnique.mockResolvedValue(
+        mockNotification,
+      );
       mockPrismaService.notification.delete.mockResolvedValue(mockNotification);
 
       await service.remove(notificationId, userId);

@@ -5,8 +5,8 @@ import { QueryPerformanceService } from './query-performance.service';
 
 @Global()
 @Module({
-    providers: [PrismaService, QueryPerformanceService],
-    controllers: [PerformanceController],
-    exports: [PrismaService, QueryPerformanceService],
+  providers: [PrismaService, QueryPerformanceService],
+  controllers: [PerformanceController],
+  exports: [PrismaService, QueryPerformanceService],
 })
-export class PrismaModule { } 
+export class PrismaModule {}

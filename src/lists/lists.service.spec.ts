@@ -109,7 +109,10 @@ describe('ListsService', () => {
 
       prismaService.list.create.mockResolvedValue(expectedList);
 
-      const result = await service.createList(mockUser.id, createListDtoWithoutColor);
+      const result = await service.createList(
+        mockUser.id,
+        createListDtoWithoutColor,
+      );
 
       expect(prismaService.list.create).toHaveBeenCalledWith({
         data: {
@@ -226,7 +229,7 @@ describe('ListsService', () => {
         expect.objectContaining({
           skip: 5, // (2-1) * 5
           take: 5,
-        })
+        }),
       );
 
       expect(result.totalPages).toBe(2); // Math.ceil(7/5)
@@ -307,7 +310,7 @@ describe('ListsService', () => {
       prismaService.list.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.getListById(mockUser.id, 'non-existent-id')
+        service.getListById(mockUser.id, 'non-existent-id'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -327,7 +330,11 @@ describe('ListsService', () => {
       prismaService.list.findFirst.mockResolvedValue(mockList);
       prismaService.list.update.mockResolvedValue(updatedList);
 
-      const result = await service.updateList(mockUser.id, mockList.id, updateListDto);
+      const result = await service.updateList(
+        mockUser.id,
+        mockList.id,
+        updateListDto,
+      );
 
       expect(prismaService.list.findFirst).toHaveBeenCalledWith({
         where: {
@@ -358,7 +365,7 @@ describe('ListsService', () => {
       prismaService.list.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.updateList(mockUser.id, 'non-existent-id', updateListDto)
+        service.updateList(mockUser.id, 'non-existent-id', updateListDto),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -367,7 +374,7 @@ describe('ListsService', () => {
       prismaService.list.update.mockRejectedValue({ code: 'P2025' });
 
       await expect(
-        service.updateList(mockUser.id, mockList.id, updateListDto)
+        service.updateList(mockUser.id, mockList.id, updateListDto),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -375,11 +382,13 @@ describe('ListsService', () => {
   describe('deleteList', () => {
     it('should delete list successfully', async () => {
       prismaService.list.findFirst.mockResolvedValue(mockList);
-      prismaService.$transaction.mockImplementation((callback: any) => callback({
-        list: {
-          delete: jest.fn().mockResolvedValue(mockList),
-        },
-      }));
+      prismaService.$transaction.mockImplementation((callback: any) =>
+        callback({
+          list: {
+            delete: jest.fn().mockResolvedValue(mockList),
+          },
+        }),
+      );
 
       const result = await service.deleteList(mockUser.id, mockList.id);
 
@@ -398,7 +407,7 @@ describe('ListsService', () => {
       prismaService.list.findFirst.mockResolvedValue(null);
 
       await expect(
-        service.deleteList(mockUser.id, 'non-existent-id')
+        service.deleteList(mockUser.id, 'non-existent-id'),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -423,7 +432,10 @@ describe('ListsService', () => {
     it('should return false when user does not own the list', async () => {
       prismaService.list.findFirst.mockResolvedValue(null);
 
-      const result = await service.checkListOwnership(mockUser.id, 'other-list-id');
+      const result = await service.checkListOwnership(
+        mockUser.id,
+        'other-list-id',
+      );
 
       expect(result).toBe(false);
     });

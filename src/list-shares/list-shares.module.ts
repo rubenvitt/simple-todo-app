@@ -5,9 +5,9 @@ import { ListSharesController } from './list-shares.controller';
 import { ListSharesService } from './list-shares.service';
 
 @Module({
-    imports: [UsersModule],
-    controllers: [ListSharesController],
-    providers: [ListSharesService, PrismaService],
-    exports: [ListSharesService],
+  imports: [UsersModule],
+  controllers: [ListSharesController],
+  providers: [ListSharesService, PrismaService],
+  exports: [ListSharesService],
 })
-export class ListSharesModule { } 
+export class ListSharesModule {}

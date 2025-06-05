@@ -116,9 +116,9 @@ describe('UsersController', () => {
     const mockSearchResult = {
       data: [
         { id: 'user-1', name: 'User 1', email: 'user1@example.com' },
-        { id: 'user-2', name: 'User 2', email: 'user2@example.com' }
+        { id: 'user-2', name: 'User 2', email: 'user2@example.com' },
       ],
-      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 }
+      pagination: { page: 1, limit: 10, total: 2, totalPages: 1 },
     };
 
     it('should call usersService.searchUsers with correct parameters', async () => {
@@ -130,7 +130,7 @@ describe('UsersController', () => {
 
       expect(usersService.searchUsers).toHaveBeenCalledWith(
         searchDto,
-        'user-123'
+        'user-123',
       );
       expect(result).toBe(mockSearchResult);
     });
@@ -144,7 +144,7 @@ describe('UsersController', () => {
 
       expect(usersService.searchUsers).toHaveBeenCalledWith(
         searchDto,
-        'user-456'
+        'user-456',
       );
     });
   });

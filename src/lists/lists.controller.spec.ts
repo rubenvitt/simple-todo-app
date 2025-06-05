@@ -45,9 +45,7 @@ describe('ListsController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ListsController],
-      providers: [
-        { provide: ListsService, useValue: mockListsService },
-      ],
+      providers: [{ provide: ListsService, useValue: mockListsService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })

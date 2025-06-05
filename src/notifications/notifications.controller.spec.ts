@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationType } from '../../generated/prisma';
-import { CreateNotificationDto, QueryNotificationsDto, UpdateNotificationDto } from './dto';
+import {
+  CreateNotificationDto,
+  QueryNotificationsDto,
+  UpdateNotificationDto,
+} from './dto';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 
@@ -71,9 +75,14 @@ describe('NotificationsController', () => {
     };
 
     it('should create a notification successfully', async () => {
-      mockNotificationsService.create.mockResolvedValue(mockCreatedNotification);
+      mockNotificationsService.create.mockResolvedValue(
+        mockCreatedNotification,
+      );
 
-      const result = await controller.create(createNotificationDto, mockRequest);
+      const result = await controller.create(
+        createNotificationDto,
+        mockRequest,
+      );
 
       expect(createNotificationDto.userId).toBe('user-1'); // Should be overridden by controller
       expect(mockNotificationsService.create).toHaveBeenCalledWith(
@@ -93,7 +102,9 @@ describe('NotificationsController', () => {
         userId: 'malicious-user-id',
       };
 
-      mockNotificationsService.create.mockResolvedValue(mockCreatedNotification);
+      mockNotificationsService.create.mockResolvedValue(
+        mockCreatedNotification,
+      );
 
       await controller.create(maliciousDto, mockRequest);
 
@@ -131,7 +142,10 @@ describe('NotificationsController', () => {
 
       const result = await controller.findAll(mockRequest, queryDto);
 
-      expect(mockNotificationsService.findAll).toHaveBeenCalledWith('user-1', queryDto);
+      expect(mockNotificationsService.findAll).toHaveBeenCalledWith(
+        'user-1',
+        queryDto,
+      );
       expect(result).toEqual(mockPaginatedResponse);
     });
 
@@ -140,13 +154,16 @@ describe('NotificationsController', () => {
         page: 2,
         limit: 10,
         read: false,
-        type: NotificationType.TASK_ASSIGNMENT
+        type: NotificationType.TASK_ASSIGNMENT,
       };
       mockNotificationsService.findAll.mockResolvedValue(mockPaginatedResponse);
 
       await controller.findAll(mockRequest, queryDto);
 
-      expect(mockNotificationsService.findAll).toHaveBeenCalledWith('user-1', queryDto);
+      expect(mockNotificationsService.findAll).toHaveBeenCalledWith(
+        'user-1',
+        queryDto,
+      );
     });
 
     it('should work with empty query parameters', async () => {
@@ -155,7 +172,10 @@ describe('NotificationsController', () => {
 
       await controller.findAll(mockRequest, queryDto);
 
-      expect(mockNotificationsService.findAll).toHaveBeenCalledWith('user-1', queryDto);
+      expect(mockNotificationsService.findAll).toHaveBeenCalledWith(
+        'user-1',
+        queryDto,
+      );
     });
   });
 
@@ -176,7 +196,10 @@ describe('NotificationsController', () => {
 
       const result = await controller.findOne(notificationId, mockRequest);
 
-      expect(mockNotificationsService.findOne).toHaveBeenCalledWith(notificationId, 'user-1');
+      expect(mockNotificationsService.findOne).toHaveBeenCalledWith(
+        notificationId,
+        'user-1',
+      );
       expect(result).toEqual(mockNotification);
     });
   });
@@ -195,9 +218,15 @@ describe('NotificationsController', () => {
     };
 
     it('should update a notification successfully', async () => {
-      mockNotificationsService.update.mockResolvedValue(mockUpdatedNotification);
+      mockNotificationsService.update.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
-      const result = await controller.update(notificationId, updateDto, mockRequest);
+      const result = await controller.update(
+        notificationId,
+        updateDto,
+        mockRequest,
+      );
 
       expect(mockNotificationsService.update).toHaveBeenCalledWith(
         notificationId,
@@ -221,11 +250,16 @@ describe('NotificationsController', () => {
     };
 
     it('should mark notification as read', async () => {
-      mockNotificationsService.markAsRead.mockResolvedValue(mockUpdatedNotification);
+      mockNotificationsService.markAsRead.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
       const result = await controller.markAsRead(notificationId, mockRequest);
 
-      expect(mockNotificationsService.markAsRead).toHaveBeenCalledWith(notificationId, 'user-1');
+      expect(mockNotificationsService.markAsRead).toHaveBeenCalledWith(
+        notificationId,
+        'user-1',
+      );
       expect(result).toEqual(mockUpdatedNotification);
     });
   });
@@ -243,11 +277,16 @@ describe('NotificationsController', () => {
     };
 
     it('should mark notification as unread', async () => {
-      mockNotificationsService.markAsUnread.mockResolvedValue(mockUpdatedNotification);
+      mockNotificationsService.markAsUnread.mockResolvedValue(
+        mockUpdatedNotification,
+      );
 
       const result = await controller.markAsUnread(notificationId, mockRequest);
 
-      expect(mockNotificationsService.markAsUnread).toHaveBeenCalledWith(notificationId, 'user-1');
+      expect(mockNotificationsService.markAsUnread).toHaveBeenCalledWith(
+        notificationId,
+        'user-1',
+      );
       expect(result).toEqual(mockUpdatedNotification);
     });
   });
@@ -256,11 +295,15 @@ describe('NotificationsController', () => {
     const mockBulkUpdateResult = { updated: 5 };
 
     it('should mark all notifications as read', async () => {
-      mockNotificationsService.markAllAsRead.mockResolvedValue(mockBulkUpdateResult);
+      mockNotificationsService.markAllAsRead.mockResolvedValue(
+        mockBulkUpdateResult,
+      );
 
       const result = await controller.markAllAsRead(mockRequest);
 
-      expect(mockNotificationsService.markAllAsRead).toHaveBeenCalledWith('user-1');
+      expect(mockNotificationsService.markAllAsRead).toHaveBeenCalledWith(
+        'user-1',
+      );
       expect(result).toEqual(mockBulkUpdateResult);
     });
   });
@@ -273,7 +316,10 @@ describe('NotificationsController', () => {
 
       const result = await controller.remove(notificationId, mockRequest);
 
-      expect(mockNotificationsService.remove).toHaveBeenCalledWith(notificationId, 'user-1');
+      expect(mockNotificationsService.remove).toHaveBeenCalledWith(
+        notificationId,
+        'user-1',
+      );
       expect(result).toBeUndefined();
     });
   });

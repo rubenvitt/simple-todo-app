@@ -1,4 +1,8 @@
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../common/services/prisma.service';
@@ -156,7 +160,10 @@ describe('UsersService', () => {
       mockedBcrypt.hash.mockResolvedValue('newHashedPassword' as never);
       prismaService.user.update.mockResolvedValue(mockUser);
 
-      const result = await service.changePassword(mockUser.id, changePasswordData);
+      const result = await service.changePassword(
+        mockUser.id,
+        changePasswordData,
+      );
 
       expect(result).toEqual({ message: 'Password changed successfully' });
       expect(mockedBcrypt.compare).toHaveBeenCalledWith(

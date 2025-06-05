@@ -4,7 +4,7 @@ import { AppConfig } from './common/config/app.config';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly configService: ConfigService<AppConfig>) { }
+  constructor(private readonly configService: ConfigService<AppConfig>) {}
 
   getHello(): string {
     const port = this.configService.get('port', { infer: true });

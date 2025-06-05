@@ -1,12 +1,18 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { environmentConfig, validateEnvironment } from './common/config/app.config';
+import {
+  environmentConfig,
+  validateEnvironment,
+} from './common/config/app.config';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { MonitoringModule } from './common/monitoring.module';
 import { AppBootstrapService } from './common/services/app-bootstrap.service';
 import { PrismaModule } from './common/services/prisma.module';
 import { SecretsService } from './common/services/secrets.service';
@@ -39,7 +45,7 @@ import { WebSocketsModule } from './websockets/websockets.module';
       },
       {
         name: 'medium',
-        ttl: 300000, // 5 minutes in milliseconds  
+        ttl: 300000, // 5 minutes in milliseconds
         limit: 300, // 300 requests per 5 minutes
       },
       {
@@ -48,6 +54,7 @@ import { WebSocketsModule } from './websockets/websockets.module';
         limit: 1000, // 1000 requests per hour
       },
     ]),
+    MonitoringModule,
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -66,6 +73,14 @@ import { WebSocketsModule } from './websockets/websockets.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
   exports: [SecretsService],

@@ -12,7 +12,7 @@ import { ListsService } from './lists.service';
     PrismaService,
     ListSharesService,
     ListAccessGuard,
-    ListPermissionGuard
-  ]
+    ListPermissionGuard,
+  ],
 })
 export class ListsModule {}

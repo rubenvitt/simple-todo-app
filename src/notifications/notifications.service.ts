@@ -1,139 +1,162 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../common/services/prisma.service';
 import {
-    CreateNotificationDto,
-    NotificationResponseDto,
-    PaginatedNotificationsResponseDto,
-    QueryNotificationsDto,
-    UpdateNotificationDto
+  CreateNotificationDto,
+  NotificationResponseDto,
+  PaginatedNotificationsResponseDto,
+  QueryNotificationsDto,
+  UpdateNotificationDto,
 } from './dto';
 
 @Injectable()
 export class NotificationsService {
-    constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-    async create(createNotificationDto: CreateNotificationDto): Promise<NotificationResponseDto> {
-        const notification = await this.prisma.notification.create({
-            data: createNotificationDto,
-        });
+  async create(
+    createNotificationDto: CreateNotificationDto,
+  ): Promise<NotificationResponseDto> {
+    const notification = await this.prisma.notification.create({
+      data: createNotificationDto,
+    });
 
-        return this.mapToResponseDto(notification);
+    return this.mapToResponseDto(notification);
+  }
+
+  async findAll(
+    userId: string,
+    queryDto: QueryNotificationsDto,
+  ): Promise<PaginatedNotificationsResponseDto> {
+    const { page = 1, limit = 20, read, type } = queryDto;
+    const skip = (page - 1) * limit;
+
+    const where: any = { userId };
+
+    if (read !== undefined) {
+      where.readStatus = read;
     }
 
-    async findAll(userId: string, queryDto: QueryNotificationsDto): Promise<PaginatedNotificationsResponseDto> {
-        const { page = 1, limit = 20, read, type } = queryDto;
-        const skip = (page - 1) * limit;
-
-        const where: any = { userId };
-
-        if (read !== undefined) {
-            where.readStatus = read;
-        }
-
-        if (type) {
-            where.type = type;
-        }
-
-        const [notifications, total] = await Promise.all([
-            this.prisma.notification.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { createdAt: 'desc' },
-            }),
-            this.prisma.notification.count({ where }),
-        ]);
-
-        const totalPages = Math.ceil(total / limit);
-
-        return {
-            notifications: notifications.map(notification => this.mapToResponseDto(notification)),
-            total,
-            page,
-            limit,
-            totalPages,
-        };
+    if (type) {
+      where.type = type;
     }
 
-    async findOne(id: string, userId: string): Promise<NotificationResponseDto> {
-        const notification = await this.prisma.notification.findUnique({
-            where: { id },
-        });
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
 
-        if (!notification) {
-            throw new NotFoundException('Notification not found');
-        }
+    const totalPages = Math.ceil(total / limit);
 
-        if (notification.userId !== userId) {
-            throw new ForbiddenException('Access denied');
-        }
+    return {
+      notifications: notifications.map((notification) =>
+        this.mapToResponseDto(notification),
+      ),
+      total,
+      page,
+      limit,
+      totalPages,
+    };
+  }
 
-        return this.mapToResponseDto(notification);
+  async findOne(id: string, userId: string): Promise<NotificationResponseDto> {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
+    });
+
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
     }
 
-    async update(id: string, userId: string, updateNotificationDto: UpdateNotificationDto): Promise<NotificationResponseDto> {
-        const notification = await this.findOne(id, userId);
-
-        const updatedNotification = await this.prisma.notification.update({
-            where: { id },
-            data: updateNotificationDto,
-        });
-
-        return this.mapToResponseDto(updatedNotification);
+    if (notification.userId !== userId) {
+      throw new ForbiddenException('Access denied');
     }
 
-    async markAsRead(id: string, userId: string): Promise<NotificationResponseDto> {
-        return this.update(id, userId, { readStatus: true });
-    }
+    return this.mapToResponseDto(notification);
+  }
 
-    async markAsUnread(id: string, userId: string): Promise<NotificationResponseDto> {
-        return this.update(id, userId, { readStatus: false });
-    }
+  async update(
+    id: string,
+    userId: string,
+    updateNotificationDto: UpdateNotificationDto,
+  ): Promise<NotificationResponseDto> {
+    const notification = await this.findOne(id, userId);
 
-    async markAllAsRead(userId: string): Promise<{ updated: number }> {
-        const result = await this.prisma.notification.updateMany({
-            where: {
-                userId,
-                readStatus: false
-            },
-            data: { readStatus: true },
-        });
+    const updatedNotification = await this.prisma.notification.update({
+      where: { id },
+      data: updateNotificationDto,
+    });
 
-        return { updated: result.count };
-    }
+    return this.mapToResponseDto(updatedNotification);
+  }
 
-    async remove(id: string, userId: string): Promise<void> {
-        await this.findOne(id, userId); // Verify ownership
+  async markAsRead(
+    id: string,
+    userId: string,
+  ): Promise<NotificationResponseDto> {
+    return this.update(id, userId, { readStatus: true });
+  }
 
-        await this.prisma.notification.delete({
-            where: { id },
-        });
-    }
+  async markAsUnread(
+    id: string,
+    userId: string,
+  ): Promise<NotificationResponseDto> {
+    return this.update(id, userId, { readStatus: false });
+  }
 
-    async cleanupOldNotifications(daysOld: number = 30): Promise<{ deleted: number }> {
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+  async markAllAsRead(userId: string): Promise<{ updated: number }> {
+    const result = await this.prisma.notification.updateMany({
+      where: {
+        userId,
+        readStatus: false,
+      },
+      data: { readStatus: true },
+    });
 
-        const result = await this.prisma.notification.deleteMany({
-            where: {
-                createdAt: {
-                    lt: cutoffDate,
-                },
-            },
-        });
+    return { updated: result.count };
+  }
 
-        return { deleted: result.count };
-    }
+  async remove(id: string, userId: string): Promise<void> {
+    await this.findOne(id, userId); // Verify ownership
 
-    private mapToResponseDto(notification: any): NotificationResponseDto {
-        return {
-            id: notification.id,
-            userId: notification.userId,
-            type: notification.type,
-            title: notification.title,
-            message: notification.message,
-            readStatus: notification.readStatus,
-            createdAt: notification.createdAt,
-        };
-    }
+    await this.prisma.notification.delete({
+      where: { id },
+    });
+  }
+
+  async cleanupOldNotifications(
+    daysOld: number = 30,
+  ): Promise<{ deleted: number }> {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - daysOld);
+
+    const result = await this.prisma.notification.deleteMany({
+      where: {
+        createdAt: {
+          lt: cutoffDate,
+        },
+      },
+    });
+
+    return { deleted: result.count };
+  }
+
+  private mapToResponseDto(notification: any): NotificationResponseDto {
+    return {
+      id: notification.id,
+      userId: notification.userId,
+      type: notification.type,
+      title: notification.title,
+      message: notification.message,
+      readStatus: notification.readStatus,
+      createdAt: notification.createdAt,
+    };
+  }
 }

@@ -8,33 +8,34 @@ import { JwtPayload } from './dto';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-    constructor(
-        private configService: ConfigService<AppConfig>,
-        private prisma: PrismaService,
-    ) {
-        super({
-            jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-            ignoreExpiration: false,
-            secretOrKey: configService.get('jwt.secret', { infer: true }) || 'fallback-secret',
-        });
+  constructor(
+    private configService: ConfigService<AppConfig>,
+    private prisma: PrismaService,
+  ) {
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey:
+        configService.get('jwt.secret', { infer: true }) || 'fallback-secret',
+    });
+  }
+
+  async validate(payload: JwtPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
-    async validate(payload: JwtPayload) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: payload.sub },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
-
-        if (!user) {
-            throw new UnauthorizedException('User not found');
-        }
-
-        return user;
-    }
-} 
+    return user;
+  }
+}

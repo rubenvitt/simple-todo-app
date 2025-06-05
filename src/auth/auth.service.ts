@@ -1,7 +1,7 @@
 import {
-    ConflictException,
-    Injectable,
-    UnauthorizedException
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -12,160 +12,166 @@ import { AuthResponse, JwtPayload, LoginDto, RegisterDto } from './dto';
 
 @Injectable()
 export class AuthService {
-    private readonly saltRounds = 12;
+  private readonly saltRounds = 12;
 
-    constructor(
-        private prisma: PrismaService,
-        private jwtService: JwtService,
-        private configService: ConfigService<AppConfig>,
-    ) { }
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private configService: ConfigService<AppConfig>,
+  ) {}
 
-    async register(registerDto: RegisterDto): Promise<AuthResponse> {
-        const { email, password, name } = registerDto;
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
+    const { email, password, name } = registerDto;
 
-        // Check if user already exists
-        const existingUser = await this.prisma.user.findUnique({
-            where: { email },
-        });
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
 
-        if (existingUser) {
-            throw new ConflictException('User with this email already exists');
-        }
-
-        // Hash password
-        const passwordHash = await bcrypt.hash(password, this.saltRounds);
-
-        // Create user
-        const user = await this.prisma.user.create({
-            data: {
-                email,
-                passwordHash,
-                name,
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-            },
-        });
-
-        // Generate tokens
-        const tokens = await this.generateTokens(user.id, user.email);
-
-        return {
-            user,
-            ...tokens,
-        };
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
     }
 
-    async login(loginDto: LoginDto): Promise<AuthResponse> {
-        const { email, password } = loginDto;
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, this.saltRounds);
 
-        // Find user
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                passwordHash: true,
-            },
-        });
+    // Create user
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        passwordHash,
+        name,
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+      },
+    });
 
-        if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email);
 
-        // Verify password
-        const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    return {
+      user,
+      ...tokens,
+    };
+  }
 
-        if (!isPasswordValid) {
-            throw new UnauthorizedException('Invalid credentials');
-        }
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
+    const { email, password } = loginDto;
 
-        // Generate tokens
-        const tokens = await this.generateTokens(user.id, user.email);
+    // Find user
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        passwordHash: true,
+      },
+    });
 
-        // Remove password hash from response
-        const { passwordHash, ...userResponse } = user;
-
-        return {
-            user: userResponse,
-            ...tokens,
-        };
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    async refreshToken(refreshToken: string): Promise<{ access_token: string; refresh_token: string }> {
-        try {
-            const payload = await this.verifyRefreshToken(refreshToken);
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
-            // Verify user still exists
-            const user = await this.prisma.user.findUnique({
-                where: { id: payload.sub },
-                select: { id: true, email: true },
-            });
-
-            if (!user) {
-                throw new UnauthorizedException('User not found');
-            }
-
-            // Generate new tokens
-            return await this.generateTokens(user.id, user.email);
-        } catch (error) {
-            throw new UnauthorizedException('Invalid refresh token');
-        }
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    private async generateTokens(userId: string, email: string): Promise<{ access_token: string; refresh_token: string }> {
-        const payload: JwtPayload = {
-            sub: userId,
-            email,
-        };
+    // Generate tokens
+    const tokens = await this.generateTokens(user.id, user.email);
 
-        const [accessToken, refreshToken] = await Promise.all([
-            this.jwtService.signAsync(payload, {
-                secret: this.configService.get('jwt.secret', { infer: true }),
-                expiresIn: this.configService.get('jwt.expiresIn', { infer: true }),
-            }),
-            this.jwtService.signAsync(payload, {
-                secret: this.configService.get('jwt.secret', { infer: true }),
-                expiresIn: this.configService.get('jwt.refreshExpiresIn', { infer: true }),
-            }),
-        ]);
+    // Remove password hash from response
+    const { passwordHash, ...userResponse } = user;
 
-        return {
-            access_token: accessToken,
-            refresh_token: refreshToken,
-        };
+    return {
+      user: userResponse,
+      ...tokens,
+    };
+  }
+
+  async refreshToken(
+    refreshToken: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    try {
+      const payload = await this.verifyRefreshToken(refreshToken);
+
+      // Verify user still exists
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      // Generate new tokens
+      return await this.generateTokens(user.id, user.email);
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+
+  private async generateTokens(
+    userId: string,
+    email: string,
+  ): Promise<{ access_token: string; refresh_token: string }> {
+    const payload: JwtPayload = {
+      sub: userId,
+      email,
+    };
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('jwt.secret', { infer: true }),
+        expiresIn: this.configService.get('jwt.expiresIn', { infer: true }),
+      }),
+      this.jwtService.signAsync(payload, {
+        secret: this.configService.get('jwt.secret', { infer: true }),
+        expiresIn: this.configService.get('jwt.refreshExpiresIn', {
+          infer: true,
+        }),
+      }),
+    ]);
+
+    return {
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
+
+  async validateUser(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
     }
 
-    async validateUser(userId: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-        });
+    return user;
+  }
 
-        if (!user) {
-            throw new UnauthorizedException('User not found');
-        }
-
-        return user;
+  private async verifyRefreshToken(token: string): Promise<any> {
+    try {
+      return await this.jwtService.verifyAsync(token, {
+        secret: this.configService.get('jwt.secret', { infer: true }),
+      });
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
     }
-
-    private async verifyRefreshToken(token: string): Promise<any> {
-        try {
-            return await this.jwtService.verifyAsync(token, {
-                secret: this.configService.get('jwt.secret', { infer: true }),
-            });
-        } catch {
-            throw new UnauthorizedException('Invalid refresh token');
-        }
-    }
-
+  }
 }

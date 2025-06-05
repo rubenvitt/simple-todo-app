@@ -11,26 +11,26 @@ import { EnhancedPermissionService } from './services/enhanced-permission.servic
 import { WebSocketsGateway } from './websockets.gateway';
 
 @Module({
-    imports: [
-        ConfigModule,
-        JwtModule.register({}), // Will use global config from AuthModule
-    ],
-    providers: [
-        WebSocketsGateway,
-        PrismaService,
-        TasksService,
-        UsersService,
-        WsJwtAuthGuard,
-        ConnectionManagerService,
-        EnhancedPermissionService,
-        EnhancedBroadcastService
-    ],
-    exports: [
-        WebSocketsGateway,
-        WsJwtAuthGuard,
-        ConnectionManagerService,
-        EnhancedPermissionService,
-        EnhancedBroadcastService
-    ],
+  imports: [
+    ConfigModule,
+    JwtModule.register({}), // Will use global config from AuthModule
+  ],
+  providers: [
+    WebSocketsGateway,
+    PrismaService,
+    TasksService,
+    UsersService,
+    WsJwtAuthGuard,
+    ConnectionManagerService,
+    EnhancedPermissionService,
+    EnhancedBroadcastService,
+  ],
+  exports: [
+    WebSocketsGateway,
+    WsJwtAuthGuard,
+    ConnectionManagerService,
+    EnhancedPermissionService,
+    EnhancedBroadcastService,
+  ],
 })
-export class WebSocketsModule { } 
+export class WebSocketsModule {}
