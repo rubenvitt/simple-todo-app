@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -29,6 +31,15 @@ import { WebSocketsModule } from './websockets/websockets.module';
 
 @Module({
   imports: [
+    // Serve static files from React build in production
+    ...(process.env.NODE_ENV === 'production'
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: join(__dirname, '..', 'frontend', 'dist'),
+            exclude: ['/api/(.*)', '/auth/(.*)', '/ws/(.*)', '/health'],
+          }),
+        ]
+      : []),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -90,10 +101,14 @@ import { WebSocketsModule } from './websockets/websockets.module';
     AppService,
     SecretsService,
     AppBootstrapService,
-    ...(process.env.NODE_ENV !== 'test' ? [{
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    }] : []),
+    ...(process.env.NODE_ENV !== 'test'
+      ? [
+          {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+          },
+        ]
+      : []),
     EnhancedRateLimitGuard,
     {
       provide: APP_INTERCEPTOR,

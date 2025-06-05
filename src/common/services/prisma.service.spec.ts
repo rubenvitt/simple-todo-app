@@ -59,7 +59,8 @@ describe('PrismaService', () => {
       providers: [
         {
           provide: PrismaService,
-          useFactory: (configService: ConfigService) => new TestPrismaService(configService),
+          useFactory: (configService: ConfigService) =>
+            new TestPrismaService(configService),
           inject: [ConfigService],
         },
         {
@@ -98,7 +99,9 @@ describe('PrismaService', () => {
 
     it('should handle health check failure', async () => {
       // Mock $queryRaw to simulate database error
-      jest.spyOn(service, '$queryRaw').mockRejectedValueOnce(new Error('Query failed'));
+      jest
+        .spyOn(service, '$queryRaw')
+        .mockRejectedValueOnce(new Error('Query failed'));
 
       const result = await service.healthCheck();
 

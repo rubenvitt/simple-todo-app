@@ -28,10 +28,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 
-      if (status === 404) {
+      if (status === 404 || status === 429) {
         status = HttpStatus.NOT_FOUND;
         message = 'Not Found';
         error = 'Not Found';
+
+        this.logger.error(`HTTP Status: ${status} Error Message: ${message}`);
 
         response.status(status).json({
           statusCode: status,

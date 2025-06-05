@@ -74,3 +74,8 @@ tasks.json
 tasks/ 
 !src/tasks/
 /generated/prisma
+
+# Frontend specific
+frontend/dist
+frontend/.env
+frontend/*.local

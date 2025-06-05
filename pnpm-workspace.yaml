@@ -1,3 +1,8 @@
+packages:
+  - '.'
+  - 'frontend'
+  - 'shared'
+
 onlyBuiltDependencies:
   - '@nestjs/core'
   - '@prisma/client'

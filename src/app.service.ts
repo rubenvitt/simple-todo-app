@@ -10,6 +10,10 @@ export class AppService {
     const port = this.configService.get('port', { infer: true });
     const nodeEnv = this.configService.get('environment', { infer: true });
 
+    if (nodeEnv === 'development') {
+      return `🚀 Backend API running on port ${port}. Frontend is available at http://localhost:5173`;
+    }
+    
     return `Hello World! Running on port ${port} in ${nodeEnv} mode.`;
   }
 

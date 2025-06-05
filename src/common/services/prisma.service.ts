@@ -231,7 +231,6 @@ export class PrismaService
     );
   }
 
-
   /**
    * Optimized create with performance tracking
    */

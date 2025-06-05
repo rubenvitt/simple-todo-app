@@ -1,6 +1,9 @@
-import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
+import {
+  Injectable,
+  LoggerService as NestLoggerService,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as winston from 'winston';
 
 interface LogContext {
   requestId?: string;
@@ -22,133 +25,93 @@ interface PerformanceMetric {
 
 @Injectable()
 export class AppLoggerService implements NestLoggerService {
-  private readonly logger: winston.Logger;
+  private readonly logger = new Logger('AppLoggerService');
   private performanceMetrics: PerformanceMetric[] = [];
   private readonly maxMetricsHistory = 1000;
 
   constructor(private readonly configService: ConfigService) {
-    this.logger = this.createLogger();
+    // NestJS Logger verwendet automatisch die LOG_LEVEL Umgebungsvariable
   }
 
-  private createLogger(): winston.Logger {
-    const isProduction = this.configService.get('NODE_ENV') === 'production';
-    const logLevel =
-      this.configService.get('LOG_LEVEL') || (isProduction ? 'warn' : 'debug');
+  private formatLogMessage(message: string, context?: LogContext): string {
+    const env = this.configService.get('NODE_ENV') || 'development';
+    const isProduction = env === 'production';
 
-    const transports: winston.transport[] = [];
+    if (isProduction && context) {
+      // In Production: JSON Format für strukturierte Logs
+      return JSON.stringify({
+        message,
+        timestamp: new Date().toISOString(),
+        service: 'simple-todo-app',
+        environment: env,
+        ...context,
+      });
+    }
 
-    if (isProduction) {
-      // Production: JSON structured logs
-      transports.push(
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.errors({ stack: true }),
-            winston.format.json(),
-          ),
-        }),
-      );
+    // In Development: Lesbares Format mit optionalen Metadaten
+    if (context && Object.keys(context).length > 0) {
+      const { requestId, userId, operation, duration, statusCode, ...rest } =
+        context;
+      const parts = [message];
 
-      // Production: File logging for persistence
-      transports.push(
-        new winston.transports.File({
-          filename: 'logs/error.log',
-          level: 'error',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.errors({ stack: true }),
-            winston.format.json(),
-          ),
-        }),
-      );
+      if (requestId) parts.push(`[ReqID: ${requestId}]`);
+      if (userId) parts.push(`[User: ${userId}]`);
+      if (operation) parts.push(`[Op: ${operation}]`);
+      if (duration !== undefined) parts.push(`[${duration}ms]`);
+      if (statusCode) parts.push(`[${statusCode}]`);
 
-      transports.push(
-        new winston.transports.File({
-          filename: 'logs/combined.log',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.errors({ stack: true }),
-            winston.format.json(),
-          ),
-        }),
-      );
+      if (Object.keys(rest).length > 0) {
+        parts.push(`\n${JSON.stringify(rest, null, 2)}`);
+      }
+
+      return parts.join(' ');
+    }
+
+    return message;
+  }
+
+  log(message: string, context?: LogContext | string): void {
+    if (typeof context === 'string') {
+      this.logger.log(message, context);
     } else {
-      // Development: Human-readable logs
-      transports.push(
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-            winston.format.errors({ stack: true }),
-            winston.format.printf(
-              ({ timestamp, level, message, context, ...meta }) => {
-                const contextStr = context ? `[${context}]` : '';
-                const metaStr = Object.keys(meta).length
-                  ? JSON.stringify(meta, null, 2)
-                  : '';
-                return `${timestamp} [${level.toUpperCase()}] ${contextStr} ${message} ${metaStr}`;
-              },
-            ),
-          ),
-        }),
-      );
+      this.logger.log(this.formatLogMessage(message, context));
     }
-
-    return winston.createLogger({
-      level: logLevel,
-      transports,
-      exitOnError: false,
-      rejectionHandlers: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-      ],
-      exceptionHandlers: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.json(),
-          ),
-        }),
-      ],
-    });
   }
 
-  private formatLogMessage(message: string, context?: LogContext): any {
-    const baseLog = {
-      message,
-      timestamp: new Date().toISOString(),
-      service: 'simple-todo-app',
-      environment: this.configService.get('NODE_ENV') || 'development',
-    };
-
-    if (context) {
-      return { ...baseLog, ...context };
+  error(message: string, trace?: string, context?: LogContext | string): void {
+    if (typeof context === 'string') {
+      this.logger.error(message, trace, context);
+    } else {
+      const formattedMessage = this.formatLogMessage(message, {
+        ...context,
+        trace,
+      });
+      this.logger.error(formattedMessage, trace);
     }
-
-    return baseLog;
   }
 
-  log(message: string, context?: LogContext): void {
-    this.logger.info(this.formatLogMessage(message, context));
+  warn(message: string, context?: LogContext | string): void {
+    if (typeof context === 'string') {
+      this.logger.warn(message, context);
+    } else {
+      this.logger.warn(this.formatLogMessage(message, context));
+    }
   }
 
-  error(message: string, trace?: string, context?: LogContext): void {
-    this.logger.error(this.formatLogMessage(message, { ...context, trace }));
+  debug(message: string, context?: LogContext | string): void {
+    if (typeof context === 'string') {
+      this.logger.debug(message, context);
+    } else {
+      this.logger.debug(this.formatLogMessage(message, context));
+    }
   }
 
-  warn(message: string, context?: LogContext): void {
-    this.logger.warn(this.formatLogMessage(message, context));
-  }
-
-  debug(message: string, context?: LogContext): void {
-    this.logger.debug(this.formatLogMessage(message, context));
-  }
-
-  verbose(message: string, context?: LogContext): void {
-    this.logger.verbose(this.formatLogMessage(message, context));
+  verbose(message: string, context?: LogContext | string): void {
+    if (typeof context === 'string') {
+      this.logger.verbose(message, context);
+    } else {
+      this.logger.verbose(this.formatLogMessage(message, context));
+    }
   }
 
   // HTTP Request Logging

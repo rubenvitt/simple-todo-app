@@ -3,7 +3,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AppService } from './app.service';
 
 @ApiTags('General')
-@Controller()
+@Controller('api')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -15,10 +15,16 @@ export class AppController {
   @ApiResponse({
     status: 200,
     description: 'Welcome message retrieved successfully',
-    example: 'Hello World!',
+    example: {
+      message: '🚀 Backend API running on port 3000. Frontend is available at http://localhost:5173',
+      environment: 'development'
+    },
   })
-  getHello(): string {
-    return this.appService.getHello();
+  getHello(): object {
+    return {
+      message: this.appService.getHello(),
+      environment: process.env.NODE_ENV || 'development'
+    };
   }
 
   @Get('health')

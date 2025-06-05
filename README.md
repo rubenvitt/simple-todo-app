@@ -23,26 +23,51 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+A collaborative todo application built with NestJS backend and React frontend in a monorepo architecture. Features real-time updates via WebSockets, role-based permissions, and task management capabilities.
+
+## Project Architecture
+
+This project uses a monorepo structure with:
+- **Backend**: NestJS API server (`/src`)
+- **Frontend**: React + Vite application (`/frontend`)
+- **Shared**: Common TypeScript types (`/shared`)
 
 ## Project setup
 
 ```bash
+# Install all dependencies
 $ pnpm install
+
+# Setup database
+$ docker-compose up -d
+$ pnpm run db:migrate
+$ pnpm run db:seed
 ```
 
 ## Compile and run the project
 
 ```bash
-# development
-$ pnpm run start
+# Run both frontend and backend in development mode
+$ pnpm run dev
 
-# watch mode
+# Run backend only
 $ pnpm run start:dev
 
-# production mode
+# Run frontend only
+$ pnpm run dev:frontend
+
+# Build for production
+$ pnpm run build
+
+# Run in production mode
 $ pnpm run start:prod
 ```
+
+## Development URLs
+
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+- WebSocket: ws://localhost:3000
 
 ## Run tests
 

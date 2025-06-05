@@ -36,7 +36,9 @@ describe('AppController', () => {
       const result = appController.getHello();
       expect(result).toBe('Hello World! Running on port 3000 in test mode.');
       expect(configService.get).toHaveBeenCalledWith('port', { infer: true });
-      expect(configService.get).toHaveBeenCalledWith('environment', { infer: true });
+      expect(configService.get).toHaveBeenCalledWith('environment', {
+        infer: true,
+      });
     });
   });
 });

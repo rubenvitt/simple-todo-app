@@ -45,7 +45,9 @@ describe('AppService', () => {
         'Hello World! Running on port 3000 in development mode.',
       );
       expect(configService.get).toHaveBeenCalledWith('port', { infer: true });
-      expect(configService.get).toHaveBeenCalledWith('environment', { infer: true });
+      expect(configService.get).toHaveBeenCalledWith('environment', {
+        infer: true,
+      });
     });
 
     it('should return hello message with default port when port is not configured', () => {
@@ -133,7 +135,9 @@ describe('AppService', () => {
         nodeVersion: process.version,
       });
 
-      expect(configService.get).toHaveBeenCalledWith('environment', { infer: true });
+      expect(configService.get).toHaveBeenCalledWith('environment', {
+        infer: true,
+      });
     });
 
     it('should use default version when npm_package_version is not set', () => {
