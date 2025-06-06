@@ -1,0 +1,11 @@
+dist
+node_modules
+*.min.js
+*.min.css
+coverage
+.next
+out
+build
+pnpm-lock.yaml
+generated
+*.svg
