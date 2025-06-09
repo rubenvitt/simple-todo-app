@@ -24,13 +24,20 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --config ./jest.config.js --runInBand",
     "test:unit": "jest --config ./jest.config.js",
     "test:ci": "jest --config ./jest.config.js --coverage --ci --testTimeout=30000",
+    "test:frontend": "pnpm --filter frontend test",
+    "test:frontend:watch": "pnpm --filter frontend test:watch",
+    "test:frontend:cov": "pnpm --filter frontend test:coverage",
+    "test:frontend:ci": "pnpm --filter frontend test:run",
+    "test:all": "pnpm test:ci && pnpm test:frontend:ci",
+    "test:all:cov": "pnpm test:cov && pnpm test:frontend:cov",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "ts-node prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:reset": "prisma migrate reset",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "create-default-lists": "ts-node scripts/create-default-lists.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.2",

@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext } from 'react';
 import { useWebSocket, useWebSocketConnection } from '../hooks';
-import { ConnectionState } from '../services/websocket.service';
 
 interface WebSocketContextType {
   wsHook: ReturnType<typeof useWebSocket>;

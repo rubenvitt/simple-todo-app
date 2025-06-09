@@ -1,6 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { Spin } from 'antd';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,6 +9,9 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const location = useLocation();
+
+  // Debug authentication state
+  console.log('🛡️ ProtectedRoute:', { isAuthenticated, isLoading, path: location.pathname });
 
   // Show loading spinner while checking authentication
   if (isLoading) {

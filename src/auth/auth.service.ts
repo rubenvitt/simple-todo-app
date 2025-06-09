@@ -7,7 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AppConfig } from '../common/config/app.config';
-import { PrismaService } from '../common/services/prisma.service';
+import { DefaultListService, PrismaService } from '../common/services';
 import { AuthResponse, JwtPayload, LoginDto, RegisterDto } from './dto';
 
 @Injectable()
@@ -18,6 +18,7 @@ export class AuthService {
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService<AppConfig>,
+    private defaultListService: DefaultListService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponse> {
@@ -35,18 +36,85 @@ export class AuthService {
     // Hash password
     const passwordHash = await bcrypt.hash(password, this.saltRounds);
 
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
+    // Create user with default list in a transaction
+    const user = await this.prisma.$transaction(async (tx) => {
+      // Create user
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          passwordHash,
+          name,
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+        },
+      });
+
+      // Create default list with welcome tasks
+      const defaultList = await tx.list.create({
+        data: {
+          name: '🚀 Meine erste Liste',
+          description:
+            'Willkommen bei Simple Todo App! Hier sind einige Beispielaufgaben zum Ausprobieren.',
+          color: '#3B82F6',
+          userId: newUser.id,
+        },
+      });
+
+      // Create welcome tasks
+      const welcomeTasks = [
+        {
+          title: '👋 Willkommen bei Simple Todo App!',
+          description:
+            'Erkunde die verschiedenen Features und drag & drop Funktionalität.',
+          status: 'TODO' as const,
+          priority: 'HIGH' as const,
+          listId: defaultList.id,
+          assignedUserId: newUser.id,
+        },
+        {
+          title: '✅ Erste Aufgabe abhaken',
+          description: 'Verschiebe diese Aufgabe in die "Erledigt" Spalte.',
+          status: 'TODO' as const,
+          priority: 'MEDIUM' as const,
+          listId: defaultList.id,
+          assignedUserId: newUser.id,
+        },
+        {
+          title: '🎯 Neue Aufgabe erstellen',
+          description:
+            'Klicke auf "Neue Aufgabe" um deine eigene Aufgabe hinzuzufügen.',
+          status: 'TODO' as const,
+          priority: 'LOW' as const,
+          listId: defaultList.id,
+          assignedUserId: newUser.id,
+        },
+        {
+          title: '🔥 Beispielaufgabe in Arbeit',
+          description: 'Diese Aufgabe ist bereits in Bearbeitung.',
+          status: 'IN_PROGRESS' as const,
+          priority: 'MEDIUM' as const,
+          listId: defaultList.id,
+          assignedUserId: newUser.id,
+        },
+        {
+          title: '🎉 Beispielaufgabe erledigt',
+          description: 'Gratulation! Du hast eine Aufgabe abgeschlossen.',
+          status: 'DONE' as const,
+          priority: 'LOW' as const,
+          listId: defaultList.id,
+          assignedUserId: newUser.id,
+        },
+      ];
+
+      // Create all welcome tasks
+      await tx.task.createMany({
+        data: welcomeTasks,
+      });
+
+      return newUser;
     });
 
     // Generate tokens
@@ -68,6 +136,7 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
+        avatar: true,
         passwordHash: true,
       },
     });
@@ -82,6 +151,9 @@ export class AuthService {
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+
+    // Create default list if user doesn't have any (for existing users logging in)
+    await this.defaultListService.createDefaultListForUser(user.id);
 
     // Generate tokens
     const tokens = await this.generateTokens(user.id, user.email);

@@ -11,6 +11,8 @@ import {
   ProfileResponseDto,
   SearchUsersDto,
   UpdateProfileDto,
+  UpdateNotificationPreferencesDto,
+  NotificationPreferencesResponseDto,
 } from './dto';
 
 @Injectable()
@@ -24,6 +26,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        avatar: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -59,6 +62,7 @@ export class UsersService {
           id: true,
           email: true,
           name: true,
+          avatar: true,
           createdAt: true,
           updatedAt: true,
         },
@@ -221,5 +225,71 @@ export class UsersService {
         totalPages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async getNotificationPreferences(
+    userId: string,
+  ): Promise<NotificationPreferencesResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        notificationPreferences: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Parse JSON preferences with fallback to defaults
+    const preferences = (user.notificationPreferences as any) || {
+      inApp: true,
+      email: true,
+      frequency: 'IMMEDIATE',
+      types: {
+        GENERAL: true,
+        TASK_ASSIGNMENT: true,
+        TASK_STATUS_CHANGE: true,
+        LIST_SHARED: true,
+        INVITATION_RECEIVED: true,
+        INVITATION_ACCEPTED: true,
+        LIST_UPDATE: true,
+      },
+    };
+
+    return preferences;
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    updateData: UpdateNotificationPreferencesDto,
+  ): Promise<NotificationPreferencesResponseDto> {
+    // Get current preferences
+    const currentPreferences = await this.getNotificationPreferences(userId);
+
+    // Merge with updates (deep merge for types)
+    const newPreferences = {
+      ...currentPreferences,
+      ...updateData,
+      types: updateData.types
+        ? { ...currentPreferences.types, ...updateData.types }
+        : currentPreferences.types,
+    };
+
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          notificationPreferences: newPreferences as any,
+        },
+      });
+
+      return newPreferences;
+    } catch (error: any) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+      throw error;
+    }
   }
 }

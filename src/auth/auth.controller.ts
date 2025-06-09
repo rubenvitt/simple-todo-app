@@ -17,7 +17,12 @@ import {
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import { AuthResponse, LoginDto, RegisterDto } from './dto';
+import {
+  AuthResponse,
+  LoginDto,
+  RegisterDto,
+  ValidateTokenResponseDto,
+} from './dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('Authentication')
@@ -242,5 +247,55 @@ export class AuthController {
   })
   async getCurrentUser(@Request() req: any) {
     return this.authService.validateUser(req.user.id);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('validate')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Validate JWT token',
+    description:
+      'Validates the provided JWT token and returns user authentication status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token is valid',
+    example: {
+      valid: true,
+      user: {
+        id: '1',
+        email: 'user@example.com',
+        name: 'John Doe',
+      },
+      expiresAt: '2024-01-01T12:00:00.000Z',
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or expired token',
+    example: {
+      message: 'Unauthorized',
+      statusCode: 401,
+    },
+  })
+  async validateToken(@Request() req: any): Promise<ValidateTokenResponseDto> {
+    // Token is already validated by JwtAuthGuard
+    // Extract expiration time from the token
+    const tokenExp = req.user.exp;
+    const expiresAt = new Date(tokenExp * 1000); // Convert from seconds to milliseconds
+
+    // Get fresh user data to ensure user still exists
+    const user = await this.authService.validateUser(req.user.sub);
+
+    return {
+      valid: true,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      },
+      expiresAt,
+    };
   }
 }

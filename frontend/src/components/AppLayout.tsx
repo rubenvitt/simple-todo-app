@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Layout, Menu, Dropdown, Avatar, Badge, Button, Space, theme } from 'antd';
+import { Layout, Menu, Dropdown, Avatar, Button, Space, theme } from 'antd';
 import { 
   DashboardOutlined, 
   UnorderedListOutlined, 
-  BellOutlined, 
   UserOutlined, 
   SettingOutlined, 
   LogoutOutlined,
@@ -15,27 +14,32 @@ import {
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
+import { useTranslation } from '../hooks/useTranslation';
+import { LanguageSwitcher } from './LanguageSwitcher';
+import { NotificationBadge, NotificationDrawer } from './notifications';
 
 const { Header, Sider, Content } = Layout;
 
 export const AppLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [notificationDrawerOpen, setNotificationDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
+  const { t } = useTranslation('common');
   const { token } = theme.useToken();
 
   const menuItems = [
     {
       key: '/',
       icon: <DashboardOutlined />,
-      label: 'Dashboard',
+      label: t('navigation.dashboard'),
     },
     {
       key: '/lists',
       icon: <UnorderedListOutlined />,
-      label: 'Listen',
+      label: t('navigation.lists'),
     },
   ];
 
@@ -43,13 +47,13 @@ export const AppLayout = () => {
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: 'Profil',
+      label: t('navigation.profile'),
       onClick: () => navigate('/profile'),
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: 'Einstellungen',
+      label: t('navigation.settings'),
       onClick: () => navigate('/settings'),
     },
     {
@@ -58,7 +62,7 @@ export const AppLayout = () => {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Abmelden',
+      label: t('navigation.logout'),
       onClick: logout,
     },
   ];
@@ -92,7 +96,7 @@ export const AppLayout = () => {
             fontSize: collapsed ? '12px' : '16px',
           }}
         >
-          {collapsed ? 'TD' : 'Todo App'}
+          {collapsed ? 'TD' : t('appName')}
         </div>
         
         <Menu
@@ -130,6 +134,8 @@ export const AppLayout = () => {
           />
           
           <Space size="middle">
+            <LanguageSwitcher />
+            
             <Button
               type="text"
               icon={isDarkMode ? <SunOutlined /> : <MoonOutlined />}
@@ -141,17 +147,7 @@ export const AppLayout = () => {
               }}
             />
             
-            <Badge count={0} size="small">
-              <Button
-                type="text"
-                icon={<BellOutlined />}
-                style={{
-                  fontSize: '16px',
-                  width: 40,
-                  height: 40,
-                }}
-              />
-            </Badge>
+            <NotificationBadge onClick={() => setNotificationDrawerOpen(true)} />
             
             <Dropdown
               menu={{ items: userMenuItems }}
@@ -162,6 +158,7 @@ export const AppLayout = () => {
                 <Space>
                   <Avatar 
                     size="small" 
+                    src={user?.avatar}
                     icon={<UserOutlined />}
                     style={{ backgroundColor: token.colorPrimary }}
                   />
@@ -188,6 +185,11 @@ export const AppLayout = () => {
           <Outlet />
         </Content>
       </Layout>
+      
+      <NotificationDrawer 
+        open={notificationDrawerOpen}
+        onClose={() => setNotificationDrawerOpen(false)}
+      />
     </Layout>
   );
 };

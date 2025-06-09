@@ -16,6 +16,7 @@ export default defineConfig({
       '@types': resolve(__dirname, './src/types'),
       '@utils': resolve(__dirname, './src/utils'),
       '@assets': resolve(__dirname, './src/assets'),
+      '@simple-todo-app/shared': resolve(__dirname, '../shared/types/index.ts'),
     },
   },
   build: {

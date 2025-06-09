@@ -36,7 +36,7 @@ import { WebSocketsModule } from './websockets/websockets.module';
       ? [
           ServeStaticModule.forRoot({
             rootPath: join(__dirname, '..', 'frontend', 'dist'),
-            exclude: ['/api/(.*)', '/auth/(.*)', '/ws/(.*)', '/health'],
+            exclude: ['/api/*', '/auth/*', '/ws/*', '/health'],
           }),
         ]
       : []),

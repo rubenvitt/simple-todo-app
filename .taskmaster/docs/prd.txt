@@ -1,178 +1,178 @@
-<context>
-# Overview  
-A comprehensive multi-user todo management application built with NestJS backend, supporting multiple lists per user with simple kanban-style task states (Todo, Doing, Done). The application solves the problem of scattered task management and enables teams to collaborate effectively on projects while maintaining individual productivity workflows. It's valuable for individual professionals, small teams, freelancers, and students who need organized, collaborative task management with real-time updates and simple state tracking.
+# Product Requirements Document: Mobile UX Optimization for Simple Todo App
 
-# Core Features  
-## User Management & Authentication
-- Secure user registration and login with JWT tokens - Essential for multi-user support and data security
-- User profile management and password reset - Ensures users can maintain their accounts independently
-- Account deletion with proper data cleanup - Critical for GDPR compliance and user control
+## Project Overview
+The Simple Todo App is a full-stack task management application built with NestJS (backend) and React (frontend). While the application currently works on mobile devices, the user experience is not optimized for touch interactions, small screens, and mobile-specific usage patterns. This project aims to completely overhaul the mobile UX to create a first-class mobile experience.
 
-## Multi-User Collaboration  
-- User isolation with selective sharing capabilities - Users own their data but can collaborate when needed
-- List sharing with permission levels (owner, editor, viewer) - Enables controlled collaboration
-- User invitation system and activity tracking - Facilitates team coordination and transparency
+## Current State Analysis
+Based on the codebase analysis, the following mobile UX issues have been identified:
 
-## List & Task Management
-- CRUD operations for lists with naming, descriptions, and color coding - Organizes tasks by project/category
-- Task management with Todo/Doing/Done states - Simple kanban workflow for clear progress tracking
-- Task priorities, due dates, descriptions, and assignments - Complete task lifecycle management
-- Search, filtering, and bulk operations - Efficient task discovery and management at scale
+### Layout & Navigation Issues
+- The sidebar navigation (Sider) is not mobile-optimized - it takes up valuable screen space on small devices
+- No mobile-specific navigation patterns (bottom navigation, hamburger menu, etc.)
+- Fixed layouts that don't adapt well to portrait/landscape orientation changes
+- Content margins and padding are too large for mobile screens (24px margins, 24px padding)
 
-## Real-time Kanban Interface
-- Three-column drag-and-drop interface - Intuitive visual task state management
-- Live updates via WebSockets for shared lists - Real-time collaboration without page refreshes
-- Responsive design for mobile and desktop - Accessible task management anywhere
+### Touch Interaction Problems
+- Touch targets are too small (buttons with only 40px height/width)
+- No touch-optimized gestures for common actions
+- Drag-and-drop in Kanban board has only basic touch support with 200ms delay
+- Missing swipe gestures for navigation and actions
+- No haptic feedback for interactions
 
-# User Experience  
-## User Personas
-- **Individual Professional**: Manages personal projects and work tasks across multiple categories
-- **Team Leader**: Coordinates team projects with task assignments and progress tracking  
-- **Freelancer**: Organizes client projects with separate lists and collaborative access
-- **Student**: Tracks academic tasks, group projects, and personal goals
+### Component & UI Issues
+- Kanban board uses 3-column grid that doesn't work well on small screens
+- Task cards have too much information density for mobile viewing
+- Forms and input fields are not optimized for mobile keyboards
+- Modals and dropdowns don't consider mobile viewport constraints
+- Missing mobile-specific UI patterns (pull-to-refresh, infinite scroll, etc.)
 
-## Key User Flows
-1. **Registration & Setup**: User registers → Creates first list → Adds initial tasks → Invites collaborators
-2. **Daily Task Management**: User logs in → Reviews tasks → Moves tasks through states → Creates new tasks
-3. **Collaboration**: User shares list → Invites team members → Assigns tasks → Tracks team progress
-4. **Task Completion**: User drags task to "Done" → Reviews completed work → Archives old tasks
+### Performance & Responsiveness
+- No viewport meta tag configuration for mobile
+- Missing responsive breakpoints for components
+- Heavy component structures that may impact mobile performance
+- No lazy loading or code splitting for mobile optimization
 
-## UI/UX Considerations
-- Clean, minimal three-column kanban layout with clear visual hierarchy
-- Drag-and-drop interactions with smooth animations and immediate feedback
-- Color-coded priorities and visual due date indicators
-- Mobile-first responsive design with touch-friendly interactions
-- Real-time collaboration indicators showing who is online and making changes
-</context>
+### Mobile-Specific Features Missing
+- No offline support or PWA capabilities
+- Missing mobile app-like transitions and animations
+- No consideration for mobile network conditions
+- Missing native mobile features integration (share, notifications, etc.)
 
-<PRD>
-# Technical Architecture  
-## System Components
-- **NestJS Backend**: RESTful API with modular architecture (Auth, Users, Lists, Tasks, Notifications modules)
-- **Database Layer**: TypeORM with SQLite (development) and PostgreSQL (production)
-- **Authentication**: JWT-based stateless authentication with refresh token support
-- **Real-time Communication**: WebSocket integration for live updates on shared lists
-- **API Documentation**: Swagger/OpenAPI for comprehensive endpoint documentation
+## Target User Experience
+The optimized mobile experience should provide:
 
-## Data Models
-- **Users**: id, email, password_hash, name, created_at, updated_at
-- **Lists**: id, name, description, color, user_id, created_at, updated_at  
-- **Tasks**: id, title, description, status (todo/doing/done), priority, due_date, list_id, assigned_user_id, created_at, updated_at
-- **List_Shares**: id, list_id, user_id, permission_level, created_at
-- **Notifications**: id, user_id, message, read_status, created_at
+1. **Native App-Like Feel**: Smooth animations, gestures, and interactions that feel natural on touch devices
+2. **Efficient Navigation**: Easy one-handed navigation with thumb-friendly touch targets
+3. **Adaptive Layouts**: Intelligent layouts that maximize screen real estate on any device size
+4. **Performance**: Fast, responsive interactions even on lower-end devices
+5. **Offline Capability**: Basic functionality available without network connection
 
-## APIs and Integrations
-- **/auth**: POST /login, POST /register, POST /refresh-token
-- **/users**: GET /profile, PUT /profile, DELETE /account
-- **/lists**: GET /, POST /, PUT /:id, DELETE /:id, POST /:id/share
-- **/tasks**: GET /, POST /, PUT /:id, DELETE /:id, PATCH /:id/status
-- **/notifications**: GET /, PATCH /:id/read
+## Functional Requirements
 
-## Infrastructure Requirements
-- Node.js runtime with TypeScript compilation
-- Database with connection pooling and migration support
-- Input validation with class-validator
-- Security middleware (helmet, CORS, rate limiting)
-- Error handling and logging infrastructure
+### Navigation & Layout
+- Implement bottom navigation bar for primary navigation on mobile
+- Create collapsible/drawer navigation for secondary options
+- Responsive breakpoints for all screen sizes (320px to 768px)
+- Landscape mode optimization
+- Safe area handling for modern devices (notches, home indicators)
 
-# Development Roadmap  
-## Phase 1: Core Backend Foundation (MVP)
-- NestJS project setup with TypeScript configuration
-- Database schema design and TypeORM integration
-- User authentication module with JWT implementation
-- Basic CRUD operations for users, lists, and tasks
-- Input validation and error handling middleware
-- Swagger API documentation setup
-- Basic testing framework implementation
+### Touch Optimization
+- Minimum 44x44px touch targets throughout the app
+- Swipe gestures for common actions (delete, complete, navigate)
+- Long-press context menus
+- Pull-to-refresh on list views
+- Momentum scrolling and rubber-band effects
 
-## Phase 2: Task State Management & Security
-- Task state transitions (Todo → Doing → Done) with validation
-- List sharing functionality with permission system
-- User invitation and collaboration features
-- Security implementations (password hashing, input sanitization)
-- Comprehensive testing suite for all endpoints
-- API rate limiting and security headers
+### Component Redesign
+- Mobile-optimized Kanban view (vertical scrolling, collapsible columns)
+- Simplified task cards for mobile with expandable details
+- Bottom sheets instead of modals for mobile
+- Native-style form inputs with proper keyboard handling
+- Floating action buttons for primary actions
 
-## Phase 3: Real-time Features & Polish
-- WebSocket implementation for real-time list updates
-- Notification system for task assignments and changes
-- Activity tracking for shared lists
-- Performance optimization and caching
-- Production deployment configuration
-- Monitoring and logging implementation
+### Performance Optimization
+- Implement virtual scrolling for long lists
+- Lazy loading of components and routes
+- Image optimization and responsive images
+- Reduced motion options for accessibility
+- Network-aware data fetching
+
+### Progressive Web App (PWA)
+- Service worker for offline functionality
+- App manifest for installability
+- Push notifications support
+- Background sync for offline actions
+- App-like splash screens and icons
+
+### Mobile-Specific Features
+- Share API integration for sharing lists/tasks
+- Camera integration for attachments
+- Vibration API for haptic feedback
+- Screen orientation API usage
+- Mobile-specific keyboard shortcuts
+
+## Technical Requirements
+
+### Frontend Architecture
+- Mobile-first CSS approach using Tailwind CSS
+- Touch event handling with proper gesture recognition
+- Responsive image loading with srcset
+- CSS containment for performance
+- Will-change optimization for animations
+
+### State Management
+- Optimistic UI updates for better perceived performance
+- Offline queue for actions performed without connection
+- Local storage for draft preservation
+- Efficient re-rendering strategies
+
+### Testing Requirements
+- Touch interaction testing
+- Multiple device/viewport testing
+- Performance testing on mid-range devices
+- Offline scenario testing
+- Cross-browser mobile testing (Safari iOS, Chrome Android)
+
+## Success Metrics
+- Touch target success rate > 95%
+- First meaningful paint < 2 seconds on 3G
+- Smooth 60fps scrolling and animations
+- Zero layout shifts during interaction
+- PWA Lighthouse score > 90
+
+## Development Roadmap
+
+### Phase 1: Core Mobile Navigation and Layout (Week 1-2)
+- Implement responsive breakpoints and mobile-first CSS
+- Create mobile navigation system (bottom nav, hamburger menu)
+- Optimize layouts for small screens
+- Add viewport meta tags and safe area handling
+- Implement basic touch target sizing
+
+### Phase 2: Touch Interactions and Gestures (Week 3-4)
+- Implement swipe gestures for navigation and actions
+- Add long-press context menus
+- Optimize drag-and-drop for touch with better activation
+- Implement pull-to-refresh functionality
+- Add momentum scrolling and touch feedback
+
+### Phase 3: Component Mobile Optimization (Week 5-6)
+- Redesign Kanban board for mobile (stacked/accordion view)
+- Create mobile-optimized task cards
+- Implement bottom sheets for mobile modals
+- Add floating action buttons
+- Optimize forms for mobile input
+
+### Phase 4: PWA and Offline Support (Week 7-8)
+- Implement service worker for offline functionality
+- Create app manifest for installability
+- Add offline queue for actions
+- Implement background sync
+- Create app icons and splash screens
+
+### Phase 5: Performance and Polish (Week 9-10)
+- Implement virtual scrolling for lists
+- Add lazy loading for routes and components
+- Optimize bundle size and code splitting
+- Performance testing and optimization
+- Final UX polish and animations
+
+## Constraints & Considerations
+- Maintain backwards compatibility with desktop experience
+- Use existing Ant Design components where possible, extend for mobile
+- Minimize bundle size increase
+- Support iOS Safari 14+ and Chrome Android 90+
+- Maintain accessibility standards (WCAG 2.1 AA)
+
+## Risk Mitigation
+- **Browser Compatibility**: Test early and often on real devices
+- **Performance Impact**: Profile and optimize continuously
+- **User Adoption**: Provide gradual migration path
+- **Technical Debt**: Refactor incrementally, maintain test coverage
 
 ## Future Enhancements
-- Advanced task filtering and search capabilities
-- Task dependencies and subtask functionality
-- Time tracking and reporting features
-- Mobile application development
-- Calendar integration and external API connections
-
-# Logical Dependency Chain
-## Foundation First (Week 1)
-- Project setup and basic NestJS configuration → Essential foundation for all development
-- Database schema and TypeORM setup → Required before any data operations
-- User authentication module → Core security requirement for all user features
-
-## Core Functionality (Week 2)  
-- User CRUD operations → Enables user management
-- List CRUD operations → Foundation for task organization
-- Task CRUD operations → Core application functionality
-- Basic API documentation → Enables testing and development
-
-## State Management (Week 3)
-- Task state transitions → Core kanban functionality
-- List sharing permissions → Enables collaboration
-- Input validation → Ensures data integrity and security
-
-## Collaboration Features (Week 4)
-- User invitation system → Facilitates team formation
-- Real-time WebSocket updates → Essential for collaborative experience
-- Notification system → Keeps users informed of changes
-
-## Production Ready (Week 5-6)
-- Security hardening → Protects user data
-- Performance optimization → Ensures scalable user experience
-- Monitoring and deployment → Enables production operations
-
-# Risks and Mitigations  
-## Technical Challenges
-- **Real-time synchronization complexity**: Mitigate by using proven WebSocket libraries and implementing conflict resolution
-- **Database performance with concurrent users**: Address through proper indexing, connection pooling, and query optimization
-- **JWT token security**: Implement short-lived access tokens with secure refresh token rotation
-
-## MVP Scope Management
-- **Feature creep risk**: Maintain strict focus on three-state kanban with basic collaboration
-- **Over-engineering authentication**: Use battle-tested authentication patterns and libraries
-- **Complex permission system**: Start with simple owner/editor/viewer roles, expand later
-
-## Resource Constraints  
-- **Development timeline pressure**: Prioritize core kanban functionality over advanced features
-- **Testing coverage**: Implement automated testing from the start to prevent regression
-- **Database migration complexity**: Design schema changes carefully with migration strategy
-
-# Appendix  
-## Technical Specifications
-- **Framework**: NestJS with TypeScript strict mode
-- **Database**: TypeORM with PostgreSQL (production), SQLite (development)
-- **Authentication**: JWT with bcrypt password hashing
-- **Validation**: class-validator for input validation
-- **Testing**: Jest for unit and integration testing
-- **Documentation**: Swagger/OpenAPI 3.0
-
-## Performance Requirements
-- API response time < 200ms for standard operations
-- Support for 100+ concurrent users per server instance
-- Real-time updates delivered within 100ms
-- Database queries optimized with proper indexing
-
-## Security Considerations
-- OWASP Top 10 compliance
-- Input sanitization and XSS prevention
-- SQL injection prevention through parameterized queries
-- Rate limiting: 100 requests per minute per user
-- CORS configuration for frontend integration
-- Helmet.js for security headers
-</PRD>
-
- 
+- React Native mobile app using shared business logic
+- Biometric authentication support
+- Widgets and shortcuts for mobile OS
+- Deep linking support
+- Mobile-specific onboarding flow

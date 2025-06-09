@@ -10,4 +10,7 @@ export class ListResponseDto {
   updatedAt!: Date;
   isOwner?: boolean;
   permissionLevel?: PermissionLevel | 'OWNER' | null;
+  taskCount?: number;
+  completedTaskCount?: number;
+  memberCount?: number;
 }

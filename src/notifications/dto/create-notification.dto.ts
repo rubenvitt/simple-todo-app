@@ -6,12 +6,10 @@ export class CreateNotificationDto {
   userId!: string;
 
   @IsEnum(NotificationType)
-  @IsOptional()
-  type?: NotificationType;
+  type!: NotificationType;
 
   @IsString()
-  @IsOptional()
-  title?: string;
+  title!: string;
 
   @IsString()
   message!: string;

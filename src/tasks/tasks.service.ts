@@ -14,6 +14,14 @@ export class TasksService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createTaskDto: CreateTaskDto, userId: string) {
+    console.error('🔍 TASK CREATION DEBUG - START');
+    console.error('📋 List ID:', createTaskDto.listId);
+    console.error('👤 User ID:', userId);
+    console.error(
+      '📝 Create Task DTO:',
+      JSON.stringify(createTaskDto, null, 2),
+    );
+
     // First, verify that the user has access to the specified list
     const list = await this.prisma.list.findFirst({
       where: {
@@ -30,7 +38,25 @@ export class TasksService {
           }, // User has edit access
         ],
       },
+      include: {
+        shares: true, // Include shares for debugging
+      },
     });
+
+    console.error('📋 LIST ACCESS CHECK RESULT:');
+    console.error('✅ List found:', !!list);
+    console.error('🆔 Requested List ID:', createTaskDto.listId);
+    console.error('👤 User ID:', userId);
+    if (list) {
+      console.error('📄 List details:', {
+        id: list.id,
+        name: list.name,
+        userId: list.userId,
+        shares: list.shares,
+      });
+    } else {
+      console.error('❌ NO LIST FOUND - Will throw error');
+    }
 
     if (!list) {
       throw new Error(

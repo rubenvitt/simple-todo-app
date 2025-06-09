@@ -76,7 +76,8 @@ export const useOptimisticUpdates = <T = any>(
         const currentUpdate = pendingUpdates.find(u => u.id === updateId);
         
         if (currentUpdate && currentUpdate.retryCount < maxRetries) {
-          retryUpdate(updateId).then(resolve).catch(reject);
+          retryUpdate(updateId);
+          // Will be resolved/rejected by the event handlers
         } else {
           revertUpdate(updateId);
           reject(new Error(`Update ${updateId} timed out after ${timeout}ms`));

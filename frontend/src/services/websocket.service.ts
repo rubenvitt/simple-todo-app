@@ -1,12 +1,14 @@
 import { io, Socket } from 'socket.io-client';
 
-export enum ConnectionState {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  CONNECTED = 'connected',
-  RECONNECTING = 'reconnecting',
-  ERROR = 'error'
-}
+export const ConnectionState = {
+  DISCONNECTED: 'disconnected',
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  RECONNECTING: 'reconnecting',
+  ERROR: 'error'
+} as const;
+
+export type ConnectionState = (typeof ConnectionState)[keyof typeof ConnectionState];
 
 export interface WebSocketMessage {
   type: string;

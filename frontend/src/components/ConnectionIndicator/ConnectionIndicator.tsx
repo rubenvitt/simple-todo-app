@@ -93,13 +93,16 @@ export const ConnectionIndicator: React.FC<ConnectionIndicatorProps> = ({
   };
 
   const indicator = (
-    <Badge 
-      status={config.status} 
-      dot={!showDetails}
-      text={showDetails ? config.text : undefined}
-      style={{ cursor: state === ConnectionState.ERROR ? 'pointer' : 'default' }}
+    <div 
       onClick={handleClick}
-    />
+      style={{ cursor: state === ConnectionState.ERROR ? 'pointer' : 'default' }}
+    >
+      <Badge 
+        status={config.status} 
+        dot={!showDetails}
+        text={showDetails ? config.text : undefined}
+      />
+    </div>
   );
 
   if (size === 'small' && !showDetails) {

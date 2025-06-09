@@ -30,6 +30,8 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  tags?: string[];
+  order: number;
 }
 
 export interface TaskWithAssignee extends Task {
@@ -37,5 +39,30 @@ export interface TaskWithAssignee extends Task {
     id: string;
     name: string;
     email: string;
+    profileImage?: string;
   };
+}
+
+// DTO types for frontend
+export interface CreateTaskDto {
+  title: string;
+  description?: string;
+  priority?: TaskPriority;
+  dueDate?: string;
+  listId: string;
+  assignedUserId?: string;
+  tags?: string[];
+  order?: number;
+}
+
+export interface UpdateTaskDto {
+  title?: string;
+  description?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  dueDate?: string;
+  listId?: string;
+  assignedUserId?: string | null;
+  tags?: string[];
+  order?: number;
 }

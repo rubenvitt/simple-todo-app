@@ -17,3 +17,47 @@ export { useUserPresence } from './useUserPresence';
 // Optimistic update hooks
 export { useOptimisticUpdates } from './useOptimisticUpdates';
 export { useOptimisticTasks } from './useOptimisticTasks';
+
+// Form handling hooks
+export { useFormConfig, createFieldProps } from './useFormConfig';
+
+// Lists hooks
+export { useLists, useList, useCreateList, useUpdateList, useDeleteList } from './useLists';
+
+// List shares hooks
+export { 
+  useListShares, 
+  useShareList, 
+  useUpdateListShare, 
+  useRemoveListShare, 
+  useSearchUsers 
+} from './useListShares';
+
+// Notifications hooks
+export {
+  useNotifications,
+  useUnreadNotificationsCount,
+  useMarkAsRead,
+  useMarkAsUnread,
+  useMarkAllAsRead,
+  useDeleteNotification
+} from './useNotifications';
+export { useNotificationWebSocket } from './useNotificationWebSocket';
+export { useNotificationPreferences } from './useNotificationPreferences';
+export { useNotificationFiltering, useFilteredNotifications } from './useNotificationFiltering';
+
+// Permission hooks
+export { usePermissions, PermissionGuard } from './usePermissions';
+
+// Tasks hooks
+export { 
+  useTasks, 
+  useCreateTask, 
+  useUpdateTaskStatus, 
+  useUpdateTaskOrder, 
+  useUpdateTask, 
+  useDeleteTask 
+} from './useTasks';
+
+// Internationalization hooks
+export { useTranslation } from './useTranslation';

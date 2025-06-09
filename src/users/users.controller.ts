@@ -24,6 +24,8 @@ import {
   ProfileResponseDto,
   SearchUsersDto,
   UpdateProfileDto,
+  UpdateNotificationPreferencesDto,
+  NotificationPreferencesResponseDto,
 } from './dto';
 import { UserExistsGuard } from './guards';
 import { UsersService } from './users.service';
@@ -277,5 +279,96 @@ export class UsersController {
   async searchUsers(@Query() searchDto: SearchUsersDto, @Request() req: any) {
     const userId = req.user?.sub || req.user?.id;
     return this.usersService.searchUsers(searchDto, userId);
+  }
+
+  @Get('notification-preferences')
+  @ApiOperation({
+    summary: 'Get notification preferences',
+    description:
+      'Retrieve the notification preferences for the authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification preferences retrieved successfully',
+    type: NotificationPreferencesResponseDto,
+    example: {
+      inApp: true,
+      email: true,
+      frequency: 'IMMEDIATE',
+      types: {
+        GENERAL: true,
+        TASK_ASSIGNMENT: true,
+        TASK_STATUS_CHANGE: true,
+        LIST_SHARED: true,
+        INVITATION_RECEIVED: true,
+        INVITATION_ACCEPTED: true,
+        LIST_UPDATE: true,
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getNotificationPreferences(
+    @Request() req: any,
+  ): Promise<NotificationPreferencesResponseDto> {
+    return this.usersService.getNotificationPreferences(req.user.id);
+  }
+
+  @Put('notification-preferences')
+  @ApiOperation({
+    summary: 'Update notification preferences',
+    description:
+      'Update the notification preferences for the authenticated user',
+  })
+  @ApiBody({
+    type: UpdateNotificationPreferencesDto,
+    description: 'Notification preferences update data',
+    examples: {
+      example1: {
+        summary: 'Update preferences',
+        value: {
+          inApp: true,
+          email: false,
+          frequency: 'DAILY_DIGEST',
+          types: {
+            TASK_ASSIGNMENT: true,
+            TASK_STATUS_CHANGE: false,
+            LIST_SHARED: true,
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification preferences updated successfully',
+    type: NotificationPreferencesResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - Invalid input data',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async updateNotificationPreferences(
+    @Request() req: any,
+    @Body() updateData: UpdateNotificationPreferencesDto,
+  ): Promise<NotificationPreferencesResponseDto> {
+    return this.usersService.updateNotificationPreferences(
+      req.user.id,
+      updateData,
+    );
   }
 }

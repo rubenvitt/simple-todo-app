@@ -43,6 +43,7 @@ export const queryKeys = {
     all: ['lists'] as const,
     list: (id: string) => ['lists', id] as const,
     shared: ['lists', 'shared'] as const,
+    shares: (listId: string) => ['lists', listId, 'shares'] as const,
   },
   tasks: {
     all: ['tasks'] as const,

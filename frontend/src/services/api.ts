@@ -1,7 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import type { AxiosResponse, InternalAxiosRequestConfig } from 'axios';
+import { tokenStorage } from './token-storage.service';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +14,7 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
+    const token = tokenStorage.getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,22 +37,27 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        const refreshToken = tokenStorage.getRefreshToken();
         if (refreshToken) {
           const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken,
+            refresh_token: refreshToken,
           });
 
-          const { accessToken } = response.data;
-          localStorage.setItem('accessToken', accessToken);
+          const { access_token, refresh_token: newRefreshToken } = response.data;
+          
+          // Update tokens in storage
+          tokenStorage.setAccessToken(access_token);
+          if (newRefreshToken) {
+            tokenStorage.setRefreshToken(newRefreshToken);
+          }
 
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        console.error('Token refresh failed:', refreshError);
+        tokenStorage.clear();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       }

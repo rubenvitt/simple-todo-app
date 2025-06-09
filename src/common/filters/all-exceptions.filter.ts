@@ -33,7 +33,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = 'Not Found';
         error = 'Not Found';
 
-        this.logger.error(`HTTP Status: ${status} Error Message: ${message}`);
+        this.logger.error(
+          `HTTP Status: ${status} Error Message: ${message}`,
+          exception instanceof Error ? exception.stack : undefined,
+          {
+            path: request.url,
+            method: request.method,
+          },
+        );
 
         response.status(status).json({
           statusCode: status,

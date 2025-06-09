@@ -16,14 +16,15 @@ export class AppController {
     status: 200,
     description: 'Welcome message retrieved successfully',
     example: {
-      message: '🚀 Backend API running on port 3000. Frontend is available at http://localhost:5173',
-      environment: 'development'
+      message:
+        '🚀 Backend API running on port 3000. Frontend is available at http://localhost:5173',
+      environment: 'development',
     },
   })
   getHello(): object {
     return {
       message: this.appService.getHello(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
     };
   }
 

@@ -1,0 +1,212 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "lists": "Listen",
+    "profile": "Profil",
+    "settings": "Einstellungen",
+    "logout": "Abmelden",
+    "language": "Sprache"
+  },
+  "actions": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "add": "Hinzufügen",
+    "create": "Erstellen",
+    "update": "Aktualisieren",
+    "submit": "Absenden",
+    "back": "Zurück",
+    "next": "Weiter",
+    "previous": "Vorherige",
+    "confirm": "Bestätigen",
+    "close": "Schließen"
+  },
+  "status": {
+    "loading": "Wird geladen...",
+    "success": "Erfolgreich",
+    "error": "Fehler",
+    "warning": "Warnung",
+    "info": "Information"
+  },
+  "messages": {
+    "welcome": "Willkommen bei der Simple Todo App",
+    "noData": "Keine Daten verfügbar",
+    "confirmDelete": "Sind Sie sicher, dass Sie dieses Element löschen möchten?",
+    "unsavedChanges": "Sie haben ungespeicherte Änderungen"
+  },
+  "appName": "Todo App",
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "markAllAsRead": "Alle als gelesen markieren",
+    "all": "Alle",
+    "unread": "Ungelesen",
+    "read": "Gelesen",
+    "filterByType": "Nach Typ filtern",
+    "empty": "Keine Benachrichtigungen",
+    "markAsReadError": "Fehler beim als gelesen Markieren",
+    "markAsUnreadError": "Fehler beim als ungelesen Markieren",
+    "deleteSuccess": "Benachrichtigung gelöscht",
+    "deleteError": "Fehler beim Löschen der Benachrichtigung",
+    "markAllAsReadSuccess": "Alle Benachrichtigungen als gelesen markiert",
+    "markAllAsReadError": "Fehler beim Markieren aller als gelesen",
+    "showingCount": "{{count}} von {{total}} Benachrichtigungen anzeigen"
+  },
+  "lists": {
+    "create": "Neue Liste erstellen",
+    "edit": "Liste bearbeiten", 
+    "name": "Name",
+    "description": "Beschreibung (optional)",
+    "placeholder": {
+      "name": "Geben Sie den Listennamen ein...",
+      "description": "Beschreibung der Liste..."
+    },
+    "validation": {
+      "nameRequired": "Bitte geben Sie einen Namen ein",
+      "nameMaxLength": "Name darf maximal 100 Zeichen lang sein",
+      "descriptionMaxLength": "Beschreibung darf maximal 500 Zeichen lang sein"
+    },
+    "messages": {
+      "createSuccess": "Liste erfolgreich erstellt!",
+      "updateSuccess": "Liste erfolgreich aktualisiert!",
+      "saveError": "Fehler beim Speichern der Liste"
+    },
+    "actions": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen", 
+      "open": "Liste öffnen",
+      "update": "Aktualisieren",
+      "create": "Erstellen"
+    },
+    "stats": {
+      "tasks": "Aufgaben",
+      "members": "Mitglieder",
+      "created": "Erstellt"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "tabs": {
+      "notifications": "Benachrichtigungen",
+      "profile": "Profil",
+      "general": "Allgemein",
+      "profilePlaceholder": "Profil-Einstellungen kommen bald...",
+      "generalPlaceholder": "Allgemeine Einstellungen kommen bald..."
+    },
+    "preferences": {
+      "loading": "Einstellungen werden geladen...",
+      "error": "Fehler beim Laden der Einstellungen",
+      "errorDescription": "Bitte versuchen Sie, die Seite zu aktualisieren, oder wenden Sie sich an den Support, falls das Problem weiterhin besteht.",
+      "updateSuccess": "Benachrichtigungseinstellungen erfolgreich aktualisiert!",
+      "updateError": "Fehler beim Aktualisieren der Benachrichtigungseinstellungen",
+      "deliveryMethods": {
+        "title": "Zustellungsmethoden",
+        "description": "Wählen Sie, wie Sie Benachrichtigungen erhalten möchten",
+        "inApp": "In-App-Benachrichtigungen",
+        "email": "E-Mail-Benachrichtigungen"
+      },
+      "frequency": {
+        "title": "Benachrichtigungshäufigkeit",
+        "description": "Wie oft möchten Sie Benachrichtigungen erhalten?",
+        "immediate": "Sofort",
+        "daily": "Tägliche Zusammenfassung",
+        "weekly": "Wöchentliche Zusammenfassung",
+        "disabled": "Deaktiviert"
+      },
+      "types": {
+        "title": "Benachrichtigungstypen",
+        "description": "Wählen Sie, welche Arten von Benachrichtigungen Sie erhalten möchten",
+        "general": {
+          "label": "Allgemeine Benachrichtigungen",
+          "description": "System-Updates und Ankündigungen"
+        },
+        "taskAssignment": {
+          "label": "Aufgabenzuweisungen",
+          "description": "Wenn Ihnen eine Aufgabe zugewiesen wird"
+        },
+        "taskStatusChange": {
+          "label": "Aufgabenstatus-Änderungen",
+          "description": "Wenn der Status einer Aufgabe aktualisiert wird"
+        },
+        "listShared": {
+          "label": "Listen-Freigabe",
+          "description": "Wenn jemand eine Liste mit Ihnen teilt"
+        },
+        "invitationReceived": {
+          "label": "Einladungen erhalten",
+          "description": "Wenn Sie Kollaborations-Einladungen erhalten"
+        },
+        "invitationAccepted": {
+          "label": "Einladungen angenommen",
+          "description": "Wenn jemand Ihre Einladung annimmt"
+        },
+        "listUpdate": {
+          "label": "Listen-Updates",
+          "description": "Wenn geteilte Listen geändert werden"
+        }
+      }
+    },
+    "general": {
+      "appearance": "Erscheinungsbild",
+      "behavior": "Verhalten",
+      "darkMode": "Dunkler Modus",
+      "darkModeDescription": "Zwischen hellem und dunklem Theme wechseln",
+      "language": "Sprache",
+      "languageDescription": "Anwendungssprache ändern",
+      "compactMode": "Kompakter Modus",
+      "compactModeDescription": "Kleinere Abstände und Elemente verwenden",
+      "autoSave": "Automatisches Speichern",
+      "autoSaveDescription": "Änderungen automatisch während der Eingabe speichern"
+    },
+    "languageChanged": "Sprache erfolgreich geändert",
+    "autoSaveUpdated": "Automatisches Speichern aktualisiert",
+    "compactModeUpdated": "Kompakter Modus aktualisiert"
+  },
+  "profile": {
+    "title": "Profil",
+    "personalInfo": "Persönliche Informationen",
+    "name": "Name",
+    "email": "E-Mail",
+    "namePlaceholder": "Geben Sie Ihren Namen ein...",
+    "emailPlaceholder": "Geben Sie Ihre E-Mail ein...",
+    "nameRequired": "Name ist erforderlich",
+    "nameMinLength": "Name muss mindestens 2 Zeichen lang sein",
+    "emailRequired": "E-Mail ist erforderlich",
+    "emailInvalid": "Bitte geben Sie eine gültige E-Mail ein",
+    "updateProfile": "Profil aktualisieren",
+    "updateSuccess": "Profil erfolgreich aktualisiert!",
+    "changePassword": "Passwort ändern",
+    "currentPassword": "Aktuelles Passwort",
+    "newPassword": "Neues Passwort",
+    "confirmPassword": "Passwort bestätigen",
+    "currentPasswordPlaceholder": "Geben Sie das aktuelle Passwort ein...",
+    "newPasswordPlaceholder": "Geben Sie das neue Passwort ein...",
+    "confirmPasswordPlaceholder": "Bestätigen Sie das neue Passwort...",
+    "currentPasswordRequired": "Aktuelles Passwort ist erforderlich",
+    "newPasswordRequired": "Neues Passwort ist erforderlich",
+    "confirmPasswordRequired": "Bitte bestätigen Sie Ihr Passwort",
+    "passwordMinLength": "Passwort muss mindestens 6 Zeichen lang sein",
+    "passwordMismatch": "Passwörter stimmen nicht überein",
+    "passwordChangeSuccess": "Passwort erfolgreich geändert!",
+    "dangerZone": "Gefahrenbereich",
+    "deleteAccount": "Konto löschen",
+    "deleteWarningTitle": "Warnung zur Kontolöschung",
+    "deleteWarningDescription": "Sobald Sie Ihr Konto löschen, gibt es kein Zurück mehr. Bitte seien Sie sich sicher.",
+    "confirmDeleteTitle": "Kontolöschung bestätigen",
+    "deleteConfirmWarning": "Diese Aktion kann nicht rückgängig gemacht werden!",
+    "deleteConfirmDescription": "Dies wird Ihr Konto und alle zugehörigen Daten dauerhaft löschen, einschließlich Listen, Aufgaben und Einstellungen. Alle geteilten Listen bleiben bestehen, aber Ihr Zugang wird widerrufen.",
+    "deleteConfirmText": "Geben Sie 'DELETE' ein, um die Kontolöschung zu bestätigen:",
+    "confirmDelete": "Mein Konto löschen",
+    "deleteSuccess": "Konto erfolgreich gelöscht",
+    "avatar": "Profilbild",
+    "changeAvatar": "Avatar ändern",
+    "cropAvatar": "Deinen Avatar zuschneiden",
+    "avatarUpdated": "Avatar erfolgreich aktualisiert",
+    "avatarUploadError": "Fehler beim Hochladen des Avatars",
+    "avatarTypeError": "Sie können nur Bilddateien hochladen!",
+    "avatarSizeError": "Das Bild muss kleiner als 5MB sein!"
+  },
+  "common": {
+    "error": "Ein Fehler ist aufgetreten"
+  }
+}

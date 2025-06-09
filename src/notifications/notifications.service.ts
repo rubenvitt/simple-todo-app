@@ -11,32 +11,115 @@ import {
   QueryNotificationsDto,
   UpdateNotificationDto,
 } from './dto';
+import { WebSocketNotificationService } from './websocket-notification.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly webSocketNotificationService: WebSocketNotificationService,
+  ) {}
 
   async create(
     createNotificationDto: CreateNotificationDto,
   ): Promise<NotificationResponseDto> {
+    // Check user preferences before creating notification
+    const shouldCreate = await this.shouldCreateNotification(
+      createNotificationDto.userId,
+      createNotificationDto.type,
+    );
+
+    if (!shouldCreate) {
+      // Return a dummy response if notification should not be created
+      return {
+        id: '',
+        userId: createNotificationDto.userId,
+        type: createNotificationDto.type,
+        title: createNotificationDto.title,
+        message: createNotificationDto.message,
+        readStatus: false,
+        createdAt: new Date(),
+      };
+    }
+
     const notification = await this.prisma.notification.create({
       data: createNotificationDto,
     });
 
-    return this.mapToResponseDto(notification);
+    const responseDto = this.mapToResponseDto(notification);
+
+    // Broadcast new notification via WebSocket
+    await this.webSocketNotificationService.broadcastNewNotification(
+      responseDto.userId,
+      responseDto,
+    );
+
+    return responseDto;
+  }
+
+  private async shouldCreateNotification(
+    userId: string,
+    notificationType: string,
+  ): Promise<boolean> {
+    try {
+      // Get user's notification preferences
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { notificationPreferences: true },
+      });
+
+      if (!user) {
+        return true; // Default to creating notification if user not found
+      }
+
+      const preferences = user.notificationPreferences as any;
+
+      if (!preferences) {
+        return true; // Default to creating notification if no preferences set
+      }
+
+      // Check if in-app notifications are enabled
+      if (!preferences.inApp) {
+        return false;
+      }
+
+      // Check if the specific notification type is enabled
+      if (preferences.types && preferences.types[notificationType] === false) {
+        return false;
+      }
+
+      // Check frequency settings (for future digest implementation)
+      // For now, all notifications are immediate
+      if (preferences.frequency === 'DISABLED') {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      // Log error but default to creating notification
+      console.error('Error checking notification preferences:', error);
+      return true;
+    }
   }
 
   async findAll(
     userId: string,
     queryDto: QueryNotificationsDto,
   ): Promise<PaginatedNotificationsResponseDto> {
-    const { page = 1, limit = 20, read, type } = queryDto;
+    const {
+      page = 1,
+      limit = 20,
+      readStatus,
+      type,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = queryDto;
     const skip = (page - 1) * limit;
 
     const where: any = { userId };
 
-    if (read !== undefined) {
-      where.readStatus = read;
+    if (readStatus !== undefined) {
+      where.readStatus = readStatus;
     }
 
     if (type) {
@@ -48,7 +131,7 @@ export class NotificationsService {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { [sortBy]: sortOrder },
       }),
       this.prisma.notification.count({ where }),
     ]);
@@ -94,7 +177,15 @@ export class NotificationsService {
       data: updateNotificationDto,
     });
 
-    return this.mapToResponseDto(updatedNotification);
+    const responseDto = this.mapToResponseDto(updatedNotification);
+
+    // Broadcast notification update via WebSocket
+    await this.webSocketNotificationService.broadcastNotificationUpdate(
+      responseDto.userId,
+      responseDto,
+    );
+
+    return responseDto;
   }
 
   async markAsRead(
@@ -129,6 +220,12 @@ export class NotificationsService {
     await this.prisma.notification.delete({
       where: { id },
     });
+
+    // Broadcast notification deletion via WebSocket
+    await this.webSocketNotificationService.broadcastNotificationDelete(
+      userId,
+      id,
+    );
   }
 
   async cleanupOldNotifications(

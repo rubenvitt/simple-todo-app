@@ -52,13 +52,24 @@ enum NotificationType {
   LIST_UPDATE
 }
 
+enum NotificationFrequency {
+  IMMEDIATE
+  DAILY_DIGEST
+  WEEKLY_DIGEST
+  DISABLED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
   passwordHash String   @map("password_hash")
   name         String
+  avatar       String?
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Notification Preferences
+  notificationPreferences Json @default("{\"inApp\": true, \"email\": true, \"frequency\": \"IMMEDIATE\", \"types\": {\"GENERAL\": true, \"TASK_ASSIGNMENT\": true, \"TASK_STATUS_CHANGE\": true, \"LIST_SHARED\": true, \"INVITATION_RECEIVED\": true, \"INVITATION_ACCEPTED\": true, \"LIST_UPDATE\": true}}") @map("notification_preferences")
 
   // Relations
   ownedLists        List[]

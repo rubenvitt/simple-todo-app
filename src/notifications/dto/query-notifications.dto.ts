@@ -2,6 +2,7 @@ import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   Max,
@@ -26,9 +27,17 @@ export class QueryNotificationsDto {
   @IsOptional()
   @Transform(({ value }) => value === 'true')
   @IsBoolean()
-  read?: boolean;
+  readStatus?: boolean;
 
   @IsOptional()
   @IsEnum(NotificationType)
   type?: NotificationType;
+
+  @IsOptional()
+  @IsIn(['createdAt', 'updatedAt'])
+  sortBy?: 'createdAt' | 'updatedAt' = 'createdAt';
+
+  @IsOptional()
+  @IsIn(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc' = 'desc';
 }

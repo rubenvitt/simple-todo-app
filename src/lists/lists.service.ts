@@ -78,6 +78,17 @@ export class ListsService {
               permissionLevel: true,
             },
           },
+          tasks: {
+            select: {
+              id: true,
+              status: true,
+            },
+          },
+          _count: {
+            select: {
+              shares: true,
+            },
+          },
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -99,21 +110,32 @@ export class ListsService {
       }),
     ]);
 
-    // Transform the response to include permission information
-    const transformedLists = lists.map((list) => ({
-      id: list.id,
-      name: list.name,
-      description: list.description,
-      color: list.color,
-      userId: list.userId,
-      createdAt: list.createdAt,
-      updatedAt: list.updatedAt,
-      isOwner: list.userId === userId,
-      permissionLevel:
-        list.userId === userId
-          ? 'OWNER'
-          : list.shares[0]?.permissionLevel || null,
-    }));
+    // Transform the response to include permission information and stats
+    const transformedLists = lists.map((list) => {
+      const taskCount = list.tasks.length;
+      const completedTaskCount = list.tasks.filter(
+        (task) => task.status === 'DONE',
+      ).length;
+      const memberCount = list._count.shares + 1; // +1 for the owner
+
+      return {
+        id: list.id,
+        name: list.name,
+        description: list.description,
+        color: list.color,
+        userId: list.userId,
+        createdAt: list.createdAt,
+        updatedAt: list.updatedAt,
+        isOwner: list.userId === userId,
+        permissionLevel:
+          list.userId === userId
+            ? 'OWNER'
+            : list.shares[0]?.permissionLevel || null,
+        taskCount,
+        completedTaskCount,
+        memberCount,
+      };
+    });
 
     const totalPages = Math.ceil(total / limit);
 

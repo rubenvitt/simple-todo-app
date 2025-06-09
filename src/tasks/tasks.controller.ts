@@ -94,7 +94,7 @@ export class TasksController {
     description: 'Unauthorized - Invalid or missing JWT token',
   })
   async findAll(@Query() queryDto: QueryTasksDto, @Request() req: any) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.findAll(queryDto, userId);
   }
 
@@ -148,7 +148,7 @@ export class TasksController {
     description: 'Forbidden - No permission to create tasks in this list',
   })
   async create(@Body() createTaskDto: CreateTaskDto, @Request() req: any) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.create(createTaskDto, userId);
   }
 
@@ -215,7 +215,7 @@ export class TasksController {
     @Body() updateTaskDto: UpdateTaskDto,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.update(id, updateTaskDto, userId);
   }
 
@@ -251,7 +251,7 @@ export class TasksController {
     description: 'Task not found',
   })
   async remove(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.remove(id, userId);
   }
 
@@ -309,7 +309,7 @@ export class TasksController {
     @Body() updateTaskStatusDto: UpdateTaskStatusDto,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.updateStatus(id, updateTaskStatusDto, userId);
   }
 
@@ -355,7 +355,7 @@ export class TasksController {
     @Body() bulkUpdateStatusDto: BulkUpdateStatusDto,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub; // Extract user ID from JWT token
+    const userId = req.user.id; // Extract user ID from JWT token
     return this.tasksService.bulkUpdateStatus(bulkUpdateStatusDto, userId);
   }
 
@@ -415,7 +415,7 @@ export class TasksController {
     @Body() assignTaskDto: any,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub;
+    const userId = req.user.id;
     return this.tasksService.assignTask(id, assignTaskDto, userId);
   }
 
@@ -453,7 +453,7 @@ export class TasksController {
     description: 'Task not found',
   })
   async unassignTask(@Param('id') id: string, @Request() req: any) {
-    const userId = req.user?.sub;
+    const userId = req.user.id;
     return this.tasksService.unassignTask(id, userId);
   }
 
@@ -509,7 +509,7 @@ export class TasksController {
     @Query() queryDto: QueryTasksDto,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub;
+    const userId = req.user.id;
     return this.tasksService.findTasksAssignedToMe(queryDto, userId);
   }
 
@@ -565,7 +565,7 @@ export class TasksController {
     @Query() queryDto: QueryTasksDto,
     @Request() req: any,
   ) {
-    const userId = req.user?.sub;
+    const userId = req.user.id;
     return this.tasksService.findUnassignedTasks(queryDto, userId);
   }
 }

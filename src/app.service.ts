@@ -13,7 +13,7 @@ export class AppService {
     if (nodeEnv === 'development') {
       return `🚀 Backend API running on port ${port}. Frontend is available at http://localhost:5173`;
     }
-    
+
     return `Hello World! Running on port ${port} in ${nodeEnv} mode.`;
   }
 

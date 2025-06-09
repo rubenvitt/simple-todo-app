@@ -85,7 +85,7 @@ export const useOptimisticTasks = (
     );
   }, [optimisticUpdates, options]);
 
-  const updateTask = useCallback(async (taskId: string, updates: Partial<TaskUpdateData>, currentTask: Task): Promise<Task> => {
+  const updateTask = useCallback(async (_taskId: string, updates: Partial<TaskUpdateData>, currentTask: Task): Promise<Task> => {
     const optimisticTask: Task = {
       ...currentTask,
       ...updates,
@@ -118,7 +118,7 @@ export const useOptimisticTasks = (
 
     return optimisticUpdates.performUpdate(
       'task:delete',
-      { id: taskId },
+      currentTask,
       currentTask,
       {
         onError: (error) => {
@@ -133,7 +133,7 @@ export const useOptimisticTasks = (
   }, [optimisticUpdates, options]);
 
   const moveTask = useCallback(async (
-    taskId: string, 
+    _taskId: string, 
     newStatus: Task['status'], 
     newPosition: number,
     currentTask: Task
@@ -172,12 +172,6 @@ export const useOptimisticTasks = (
     assigneeId: string | undefined, 
     currentTask: Task
   ): Promise<Task> => {
-    const optimisticTask: Task = {
-      ...currentTask,
-      assigneeId,
-      updatedAt: new Date().toISOString()
-    };
-
     return updateTask(taskId, { assigneeId }, currentTask);
   }, [updateTask]);
 
