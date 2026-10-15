@@ -2,6 +2,7 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { Card, Typography, Badge, Spin } from 'antd';
 import { PermissionAwareTaskCard } from './PermissionAwareTaskCard';
+import { SwipeableTaskCard } from './SwipeableTaskCard';
 import { usePermissions } from '../../hooks';
 import type { TaskWithAssignee, TaskStatus } from '@simple-todo-app/shared';
 
@@ -16,6 +17,7 @@ interface PermissionAwareKanbanColumnProps {
   loading?: boolean;
   onEditTask?: (taskId: string) => void;
   onDeleteTask?: (taskId: string) => void;
+  enableSwipeGestures?: boolean;
 }
 
 export const PermissionAwareKanbanColumn: React.FC<PermissionAwareKanbanColumnProps> = ({
@@ -27,6 +29,7 @@ export const PermissionAwareKanbanColumn: React.FC<PermissionAwareKanbanColumnPr
   loading = false,
   onEditTask,
   onDeleteTask,
+  enableSwipeGestures = true,
 }) => {
   const permissions = usePermissions({ listId });
   
@@ -92,15 +95,26 @@ export const PermissionAwareKanbanColumn: React.FC<PermissionAwareKanbanColumnPr
             </div>
           ) : (
             <>
-              {tasks.map((task) => (
-                <PermissionAwareTaskCard 
-                  key={task.id} 
-                  task={task} 
-                  listId={listId}
-                  onEdit={onEditTask}
-                  onDelete={onDeleteTask}
-                />
-              ))}
+              {tasks.map((task) => 
+                enableSwipeGestures ? (
+                  <SwipeableTaskCard 
+                    key={task.id} 
+                    task={task} 
+                    listId={listId}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                    enableSwipe={permissions.canEdit}
+                  />
+                ) : (
+                  <PermissionAwareTaskCard 
+                    key={task.id} 
+                    task={task} 
+                    listId={listId}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                  />
+                )
+              )}
               {/* Empty drop zone at bottom for better UX */}
               <div 
                 className="h-4 transition-colors duration-200"

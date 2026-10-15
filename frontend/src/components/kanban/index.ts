@@ -1,6 +1,16 @@
 export { KanbanBoard } from './KanbanBoard';
 export { KanbanColumn } from './KanbanColumn';
+export { VirtualizedKanbanColumn } from './VirtualizedKanbanColumn';
+export { FixedVirtualizedKanbanColumn } from './FixedVirtualizedKanbanColumn';
+export { VirtualizedKanbanBoard } from './VirtualizedKanbanBoard';
+export { VirtualizedPermissionAwareKanbanBoard } from './VirtualizedPermissionAwareKanbanBoard';
 export { TaskCard } from './TaskCard';
 export { PermissionAwareTaskCard } from './PermissionAwareTaskCard';
 export { PermissionAwareKanbanColumn } from './PermissionAwareKanbanColumn';
+export { FixedPermissionAwareKanbanColumn } from './FixedPermissionAwareKanbanColumn';
 export { PermissionAwareKanbanBoard } from './PermissionAwareKanbanBoard';
+export { SwipeableTaskCard } from './SwipeableTaskCard';
+export { MobileKanbanBoard } from './MobileKanbanBoard';
+export { MobileKanbanColumn } from './MobileKanbanColumn';
+export { ResponsiveKanbanBoard } from './ResponsiveKanbanBoard';
+export { DragDropTestDebugger, useDragDropDebugger } from './DragDropTestDebugger';

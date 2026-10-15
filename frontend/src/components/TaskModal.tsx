@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { debounce } from 'lodash';
 import { listSharesService, type SearchUsersResponse } from '../services/list-shares.service';
 import type { Task, TaskPriority } from '@simple-todo-app/shared';
+import { useMobileDetection } from '../hooks';
+import { MobileFormField } from './forms';
 
 const { TextArea } = Input;
 const { Dragger } = Upload;
@@ -42,6 +44,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   loading = false,
 }) => {
   const [form] = Form.useForm();
+  const { isMobile } = useMobileDetection();
   
   // User search state
   const [userSearchResults, setUserSearchResults] = useState<SearchUsersResponse[]>([]);
@@ -240,48 +243,109 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         style={{ marginTop: 16 }}
       >
         {/* Title Field */}
-        <Form.Item
-          label="Titel"
-          validateStatus={errors.title ? 'error' : ''}
-          help={errors.title?.message}
-          required
-        >
-          <Controller
+        {isMobile ? (
+          <MobileFormField
             name="title"
             control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                placeholder="Task-Titel eingeben..."
-                size="large"
-              />
-            )}
+            type="text"
+            label="Titel"
+            required
+            autoFocus
+            inputProps={{
+              placeholder: "Task-Titel eingeben...",
+            }}
           />
-        </Form.Item>
+        ) : (
+          <Form.Item
+            label="Titel"
+            validateStatus={errors.title ? 'error' : ''}
+            help={errors.title?.message}
+            required
+          >
+            <Controller
+              name="title"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  placeholder="Task-Titel eingeben..."
+                  size="large"
+                />
+              )}
+            />
+          </Form.Item>
+        )}
 
         {/* Description Field */}
-        <Form.Item
-          label="Beschreibung"
-          validateStatus={errors.description ? 'error' : ''}
-          help={errors.description?.message}
-        >
-          <Controller
+        {isMobile ? (
+          <MobileFormField
             name="description"
             control={control}
-            render={({ field }) => (
-              <TextArea
-                {...field}
-                rows={4}
-                placeholder="Detaillierte Beschreibung der Task..."
-                showCount
-                maxLength={1000}
-              />
-            )}
+            type="textarea"
+            label="Beschreibung"
+            rows={3}
+            autoResize
+            maxLength={500}
+            inputProps={{
+              placeholder: "Detaillierte Beschreibung der Task...",
+            }}
           />
-        </Form.Item>
+        ) : (
+          <Form.Item
+            label="Beschreibung"
+            validateStatus={errors.description ? 'error' : ''}
+            help={errors.description?.message}
+          >
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <TextArea
+                  {...field}
+                  rows={4}
+                  placeholder="Detaillierte Beschreibung der Task..."
+                  showCount
+                  maxLength={1000}
+                />
+              )}
+            />
+          </Form.Item>
+        )}
 
-        {/* Priority and Due Date Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+    {/* Priority and Due Date Row */}
+    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: 16 }}>
+      {isMobile ? (
+        <>
+          <MobileFormField
+            name="priority"
+            control={control}
+            type="select"
+            label="Priorität"
+            options={[
+              { value: 'LOW', label: '🟢 Niedrig' },
+              { value: 'MEDIUM', label: '🟡 Mittel' },
+              { value: 'HIGH', label: '🔴 Hoch' },
+              { value: 'URGENT', label: '🚨 Dringend' },
+            ]}
+            selectProps={{
+              placeholder: "Priorität wählen",
+            }}
+          />
+
+          <MobileFormField
+            name="dueDate"
+            control={control}
+            type="date"
+            label="Fälligkeitsdatum"
+            format="DD.MM.YYYY"
+            showNativeInput
+            dateProps={{
+              placeholder: "Datum wählen",
+            }}
+          />
+        </>
+      ) : (
+        <>
           <Form.Item
             label="Priorität"
             validateStatus={errors.priority ? 'error' : ''}
@@ -324,43 +388,76 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               )}
             />
           </Form.Item>
-        </div>
+        </>
+      )}
+    </div>
 
-        {/* Assignee Field */}
-        <Form.Item
-          label="Zugewiesen an"
-          validateStatus={errors.assigneeId ? 'error' : ''}
-          help={errors.assigneeId?.message}
-        >
-          <Controller
-            name="assigneeId"
-            control={control}
-            render={({ field }) => (
-              <Select
-                {...field}
-                placeholder="Person zuweisen..."
-                allowClear
-                showSearch
-                onSearch={handleUserSearch}
-                loading={userSearchLoading}
-                filterOption={false}
-                notFoundContent={userSearchLoading ? <Spin size="small" /> : 'Keine Benutzer gefunden'}
-              >
-                {userSearchResults.map(user => (
-                  <Select.Option key={user.id} value={user.id}>
-                    <Space>
-                      <Avatar size="small" icon={<UserOutlined />} />
-                      <div>
-                        <div>{user.name}</div>
-                        <div style={{ fontSize: '12px', color: '#999' }}>{user.email}</div>
-                      </div>
-                    </Space>
-                  </Select.Option>
-                ))}
-              </Select>
-            )}
-          />
-        </Form.Item>
+    {/* Assignee Field */}
+    {isMobile ? (
+      <MobileFormField
+        name="assigneeId"
+        control={control}
+        type="select"
+        label="Zugewiesen an"
+        searchable
+        selectProps={{
+          placeholder: "Person zuweisen...",
+          allowClear: true,
+          showSearch: true,
+          onSearch: handleUserSearch,
+          loading: userSearchLoading,
+          filterOption: false,
+          notFoundContent: userSearchLoading ? <Spin size="small" /> : 'Keine Benutzer gefunden',
+        }}
+        options={userSearchResults.map(user => ({
+          value: user.id,
+          label: (
+            <Space>
+              <Avatar size="small" icon={<UserOutlined />} />
+              <div>
+                <div>{user.name}</div>
+                <div style={{ fontSize: '12px', color: '#999' }}>{user.email}</div>
+              </div>
+            </Space>
+          ),
+        }))}
+      />
+    ) : (
+      <Form.Item
+        label="Zugewiesen an"
+        validateStatus={errors.assigneeId ? 'error' : ''}
+        help={errors.assigneeId?.message}
+      >
+        <Controller
+          name="assigneeId"
+          control={control}
+          render={({ field }) => (
+            <Select
+              {...field}
+              placeholder="Person zuweisen..."
+              allowClear
+              showSearch
+              onSearch={handleUserSearch}
+              loading={userSearchLoading}
+              filterOption={false}
+              notFoundContent={userSearchLoading ? <Spin size="small" /> : 'Keine Benutzer gefunden'}
+            >
+              {userSearchResults.map(user => (
+                <Select.Option key={user.id} value={user.id}>
+                  <Space>
+                    <Avatar size="small" icon={<UserOutlined />} />
+                    <div>
+                      <div>{user.name}</div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>{user.email}</div>
+                    </div>
+                  </Space>
+                </Select.Option>
+              ))}
+            </Select>
+          )}
+        />
+      </Form.Item>
+    )}
 
         {/* File Upload */}
         <Form.Item label="Anhänge">

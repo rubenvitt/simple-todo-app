@@ -1,8 +1,8 @@
 import React from 'react';
 import { Form, Button, Alert, Typography } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
-import { useFormConfig, useTranslation } from '../../hooks';
-import { SimpleFormField as FormField, FormErrorBoundary } from '../forms';
+import { useFormConfig, useTranslation, useMobileDetection } from '../../hooks';
+import { SimpleFormField as FormField, MobileFormField, FormErrorBoundary } from '../forms';
 import { loginSchema, type LoginFormData } from '../../types/validation.schemas';
 import { FormErrorHandler } from '../../utils';
 
@@ -20,6 +20,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   error = null,
 }) => {
   const { t } = useTranslation('auth');
+  const { isMobile } = useMobileDetection();
   const form = useFormConfig(loginSchema, {
     defaultValues: {
       email: '',
@@ -73,37 +74,71 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           autoComplete="off"
           className="space-y-4"
         >
-          <FormField
-            name="email"
-            control={form.control}
-            type="email"
-            label={<span className="text-sm font-medium text-gray-700">{t('login.email')}</span>}
-            required
-            inputProps={{
-              prefix: <UserOutlined className="text-gray-400" />,
-              placeholder: t('login.email'),
-              size: "large",
-              autoComplete: "email",
-              className: "rounded-lg border-gray-300 focus:border-blue-500 transition-colors",
-            }}
-            className="mb-4"
-          />
+          {isMobile ? (
+            <>
+              <MobileFormField
+                name="email"
+                control={form.control}
+                type="email"
+                label={<span className="text-sm font-medium text-gray-700">{t('login.email')}</span>}
+                required
+                autoFocus
+                autoComplete="email"
+                inputProps={{
+                  prefix: <UserOutlined className="text-gray-400" />,
+                  placeholder: t('login.email'),
+                }}
+                className="mb-4"
+              />
 
-          <FormField
-            name="password"
-            control={form.control}
-            type="password"
-            label={<span className="text-sm font-medium text-gray-700">{t('login.password')}</span>}
-            required
-            inputProps={{
-              prefix: <LockOutlined className="text-gray-400" />,
-              placeholder: t('login.password'),
-              size: "large",
-              autoComplete: "current-password",
-              className: "rounded-lg border-gray-300 focus:border-blue-500 transition-colors",
-            }}
-            className="mb-4"
-          />
+              <MobileFormField
+                name="password"
+                control={form.control}
+                type="password"
+                label={<span className="text-sm font-medium text-gray-700">{t('login.password')}</span>}
+                required
+                inputProps={{
+                  prefix: <LockOutlined className="text-gray-400" />,
+                  placeholder: t('login.password'),
+                }}
+                className="mb-4"
+              />
+            </>
+          ) : (
+            <>
+              <FormField
+                name="email"
+                control={form.control}
+                type="email"
+                label={<span className="text-sm font-medium text-gray-700">{t('login.email')}</span>}
+                required
+                inputProps={{
+                  prefix: <UserOutlined className="text-gray-400" />,
+                  placeholder: t('login.email'),
+                  size: "large",
+                  autoComplete: "email",
+                  className: "rounded-lg border-gray-300 focus:border-blue-500 transition-colors",
+                }}
+                className="mb-4"
+              />
+
+              <FormField
+                name="password"
+                control={form.control}
+                type="password"
+                label={<span className="text-sm font-medium text-gray-700">{t('login.password')}</span>}
+                required
+                inputProps={{
+                  prefix: <LockOutlined className="text-gray-400" />,
+                  placeholder: t('login.password'),
+                  size: "large",
+                  autoComplete: "current-password",
+                  className: "rounded-lg border-gray-300 focus:border-blue-500 transition-colors",
+                }}
+                className="mb-4"
+              />
+            </>
+          )}
 
           <div className="flex justify-end mb-6">
             <button 

@@ -15,7 +15,9 @@ import {
   BarsOutlined,
 } from '@ant-design/icons';
 import { useLists, useDeleteList } from '../hooks';
-import { CreateListModal, ShareModal, ListCard, ListTable } from '../components';
+import { CreateListModal, ListCard, ListTable } from '../components';
+import { ShareModalLazy } from '../components/LazyComponents';
+import { SwipeableViewContainer } from '../components/navigation';
 // import { useTranslation } from '../hooks';
 import type { ListWithStats } from '@simple-todo-app/shared';
 
@@ -176,6 +178,10 @@ const Lists = () => {
         </div>
 
         {/* Listen Inhalt - Wiederverwendung der Komponenten! */}
+        <SwipeableViewContainer
+          onSwipeLeft={() => setViewType(viewType === 'cards' ? 'table' : 'cards')}
+          onSwipeRight={() => setViewType(viewType === 'table' ? 'cards' : 'table')}
+        >
         {filteredLists.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 bg-white rounded-lg border border-gray-200">
             <Empty
@@ -227,6 +233,7 @@ const Lists = () => {
             onDelete={handleDeleteList}
           />
         )}
+        </SwipeableViewContainer>
 
         {/* Modals */}
         <CreateListModal
@@ -235,7 +242,7 @@ const Lists = () => {
           editingList={editingList}
         />
 
-        <ShareModal
+        <ShareModalLazy
           open={shareModalOpen}
           onClose={handleCloseShareModal}
           list={sharingList}

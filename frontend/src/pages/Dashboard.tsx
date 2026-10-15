@@ -24,9 +24,11 @@ import {
   FireOutlined,
   StarOutlined,
 } from '@ant-design/icons';
-import { useLists } from '../hooks';
+import { useLists, useListPullToRefresh } from '../hooks';
 import { useNavigate } from 'react-router-dom';
+import { useResponsiveKanban } from '../hooks/useResponsiveKanban';
 import { CreateListModal } from '../components';
+import { PullToRefreshIndicator, FloatingActionButton, type FloatingAction } from '../components/ui';
 import type { ListWithStats, TaskWithAssignee, TaskStatus } from '@simple-todo-app/shared';
 import apiClient from '../services/api.service';
 import { useQuery } from '@tanstack/react-query';
@@ -60,7 +62,22 @@ const getStatusText = (status: TaskStatus) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [createModalOpen, setCreateModalOpen] = useState(false);
-  const { data: lists, isLoading, error } = useLists();
+  const { data: lists, isLoading, error, refetch } = useLists();
+  const { isMobile } = useResponsiveKanban();
+
+  // Pull-to-refresh for mobile
+  const pullToRefresh = useListPullToRefresh(
+    async () => {
+      await Promise.all([
+        refetch(),
+        // Add a small delay for better UX
+        new Promise(resolve => setTimeout(resolve, 500)),
+      ]);
+    },
+    {
+      disabled: !isMobile || isLoading,
+    }
+  );
 
   // Fetch recent tasks across all lists
   const { data: recentTasks } = useQuery({
@@ -115,6 +132,23 @@ const Dashboard = () => {
       .slice(0, 5);
   }, [lists]);
 
+  // FAB actions for mobile
+  const fabActions: FloatingAction[] = [
+    {
+      key: 'create-list',
+      label: 'Neue Liste',
+      icon: <PlusOutlined />,
+      onClick: () => setCreateModalOpen(true),
+    },
+    {
+      key: 'refresh',
+      label: 'Aktualisieren',
+      icon: <RightOutlined style={{ transform: 'rotate(90deg)' }} />,
+      onClick: () => refetch(),
+      disabled: isLoading,
+    },
+  ];
+
   if (error) {
     return (
       <Alert
@@ -128,7 +162,28 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Pull-to-Refresh Indicator */}
+      {isMobile && (
+        <PullToRefreshIndicator
+          pullDistance={pullToRefresh.pullDistance}
+          pullProgress={pullToRefresh.pullProgress}
+          isPulling={pullToRefresh.isPulling}
+          isRefreshing={pullToRefresh.isRefreshing}
+          isThresholdReached={pullToRefresh.isThresholdReached}
+          threshold={pullToRefresh.threshold}
+        />
+      )}
+
+      <div 
+        ref={pullToRefresh.containerRef}
+        {...(isMobile ? pullToRefresh.bind() : {})}
+        className="max-w-7xl mx-auto px-4 py-6"
+        style={{ 
+          touchAction: isMobile ? 'pan-y' : 'auto',
+          overscrollBehaviorY: isMobile ? 'none' : 'auto',
+          minHeight: '100vh',
+        }}
+      >
         {/* Header */}
         <div className="mb-8">
           <Title level={2} className="mb-2">👋 Willkommen zurück!</Title>
@@ -347,6 +402,17 @@ const Dashboard = () => {
           open={createModalOpen}
           onClose={() => setCreateModalOpen(false)}
         />
+
+        {/* Floating Action Button - Only on Mobile */}
+        {isMobile && (
+          <FloatingActionButton
+            actions={fabActions}
+            tooltip="Aktionen"
+            hideOnScroll={true}
+            scrollContainerRef={pullToRefresh.containerRef}
+            disabled={isLoading}
+          />
+        )}
       </div>
     </div>
   );

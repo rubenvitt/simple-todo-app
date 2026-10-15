@@ -1,0 +1,84 @@
+/* VirtualizedList Mobile Optimizations */
+.virtualized-list {
+  /* Improve mobile scrolling performance */
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+  
+  /* Enable hardware acceleration */
+  transform: translateZ(0);
+  will-change: scroll-position;
+}
+
+.virtualized-list-inner {
+  /* Reduce layout thrashing */
+  contain: layout style paint;
+  
+  /* Optimize rendering on mobile */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  
+  /* Enable hardware acceleration for scrolling */
+  transform: translate3d(0, 0, 0);
+  -webkit-transform: translate3d(0, 0, 0);
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .virtualized-list {
+    /* Reduce item margins on mobile for better space utilization */
+    --item-spacing: 8px;
+  }
+  
+  .virtualized-list-inner {
+    /* Further optimize for mobile performance */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+    
+    /* Reduce repaints on mobile */
+    background-attachment: local;
+  }
+}
+
+/* Optimize for high DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .virtualized-list-inner {
+    /* Improve rendering quality on retina displays */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: optimize-contrast;
+  }
+}
+
+/* Performance optimizations for smooth scrolling */
+.kanban-virtualized-list {
+  /* Minimize layout shifts */
+  position: relative;
+  overflow: hidden;
+}
+
+.kanban-virtualized-list .virtualized-list-inner {
+  /* Optimize for mobile kanban scrolling */
+  scroll-behavior: smooth;
+  -webkit-scroll-behavior: smooth;
+}
+
+/* Touch-friendly scrollbars */
+@media (pointer: coarse) {
+  .virtualized-list::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .virtualized-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+  }
+  
+  .virtualized-list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+  }
+  
+  .virtualized-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}

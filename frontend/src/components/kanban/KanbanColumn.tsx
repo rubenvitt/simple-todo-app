@@ -28,50 +28,57 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({
   return (
     <div
       ref={setNodeRef}
-      className={`flex flex-col h-full transition-all duration-200 ${
-        isOver ? 'scale-105' : ''
+      className={`flex flex-col h-full transition-all duration-200 
+        w-[400px] min-[1280px]:w-full
+        flex-shrink-0 min-[1280px]:flex-shrink
+        snap-center min-[1280px]:snap-none
+        ${isOver ? 'transform scale-[1.02]' : ''
       }`}
     >
       <Card
-        className={`h-full ${isOver ? 'shadow-lg border-2' : 'shadow-sm'}`}
+        className={`h-full ${isOver ? 'shadow-xl border-2' : 'shadow'} bg-white border-gray-200`}
         style={{ 
-          borderColor: isOver ? color : undefined,
-          backgroundColor: isOver ? `${color}08` : undefined,
+          borderColor: isOver ? color : '#e5e7eb',
+          borderRadius: '8px',
         }}
         bodyStyle={{ 
-          padding: '16px',
+          padding: '12px',
           height: '100%',
           display: 'flex',
           flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <div
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: color }}
             />
-            <Title level={5} className="!mb-0">
+            <Title level={5} className="!mb-0 font-medium text-gray-700">
               {title}
             </Title>
           </div>
           <Badge
             count={tasks.length}
-            style={{ backgroundColor: color }}
+            style={{ 
+              backgroundColor: color,
+              fontSize: '12px',
+            }}
             showZero
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-3">
+        <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
           {loading ? (
             <div className="flex justify-center py-8">
               <Spin size="large" />
             </div>
           ) : tasks.length === 0 ? (
             <div
-              className="border-2 border-dashed rounded-lg p-8 text-center text-gray-400 transition-colors duration-200"
+              className="border-2 border-dashed rounded-lg p-8 text-center text-gray-400 transition-all duration-200"
               style={{
-                borderColor: isOver ? color : '#d9d9d9',
+                borderColor: isOver ? color : '#e5e7eb',
                 backgroundColor: isOver ? `${color}10` : 'transparent',
               }}
             >

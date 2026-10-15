@@ -1,5 +1,590 @@
 @import "tailwindcss";
 
+/* Kanban Board Scrollbar Styling */
+.kanban-board-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.kanban-board-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.kanban-board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.kanban-board-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+
+.kanban-board-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 640px) {
+  .kanban-board-scroll {
+    scrollbar-width: none;
+  }
+  
+  .kanban-board-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Custom scrollbar for desktop */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Kanban column heights */
+.kanban-column-body {
+  height: calc(100vh - 300px);
+  min-height: 400px;
+  max-height: 800px;
+}
+
+/* Standardized Spacing System */
+:root {
+  /* CSS Custom Properties for consistent spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* Responsive spacing using clamp for fluid scaling */
+  --spacing-responsive-xs: clamp(2px, 0.5vw, 4px);
+  --spacing-responsive-sm: clamp(4px, 1vw, 8px);
+  --spacing-responsive-md: clamp(8px, 2vw, 16px);
+  --spacing-responsive-lg: clamp(12px, 3vw, 24px);
+  --spacing-responsive-xl: clamp(16px, 4vw, 32px);
+  
+  /* Component-specific spacing */
+  --card-padding: var(--spacing-md);
+  --card-padding-mobile: var(--spacing-sm);
+  --button-height: 36px;
+  --button-height-large: 40px;
+  --input-height: 36px;
+  --input-height-large: 44px;
+  --kanban-gap: var(--spacing-md);
+  --modal-padding: var(--spacing-lg);
+  --modal-padding-mobile: var(--spacing-md);
+}
+
+/* Optimized spacing utility classes */
+@layer utilities {
+  .space-xs { gap: var(--spacing-xs); }
+  .space-sm { gap: var(--spacing-sm); }
+  .space-md { gap: var(--spacing-md); }
+  .space-lg { gap: var(--spacing-lg); }
+  .space-xl { gap: var(--spacing-xl); }
+  
+  .space-responsive-sm { gap: var(--spacing-responsive-sm); }
+  .space-responsive-md { gap: var(--spacing-responsive-md); }
+  .space-responsive-lg { gap: var(--spacing-responsive-lg); }
+  
+  .p-responsive { padding: var(--spacing-responsive-md); }
+  .px-responsive { padding-left: var(--spacing-responsive-md); padding-right: var(--spacing-responsive-md); }
+  .py-responsive { padding-top: var(--spacing-responsive-md); padding-bottom: var(--spacing-responsive-md); }
+  
+  .m-responsive { margin: var(--spacing-responsive-md); }
+  .mx-responsive { margin-left: var(--spacing-responsive-md); margin-right: var(--spacing-responsive-md); }
+  .my-responsive { margin-top: var(--spacing-responsive-md); margin-bottom: var(--spacing-responsive-md); }
+}
+
+/* Compact component styles */
+@layer components {
+  /* Optimized card spacing */
+  .compact-card {
+    padding: var(--card-padding);
+    gap: var(--spacing-sm);
+  }
+  
+  .compact-card-mobile {
+    padding: var(--card-padding-mobile);
+    gap: var(--spacing-xs);
+  }
+  
+  /* Optimized button spacing */
+  .compact-button {
+    height: var(--button-height);
+    padding: 0 var(--spacing-md);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  
+  .compact-button-large {
+    height: var(--button-height-large);
+    padding: 0 var(--spacing-lg);
+  }
+  
+  /* Optimized form spacing */
+  .compact-form .ant-form-item {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .compact-form-mobile .ant-form-item {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  /* Optimized list spacing */
+  .compact-list .ant-list-item {
+    padding: var(--spacing-sm) 0;
+  }
+  
+  .compact-list-mobile .ant-list-item {
+    padding: var(--spacing-xs) 0;
+  }
+  
+  /* Optimized modal spacing */
+  .compact-modal .ant-modal-content {
+    padding: var(--modal-padding);
+  }
+  
+  .compact-modal-mobile .ant-modal-content {
+    padding: var(--modal-padding-mobile);
+  }
+  
+  /* Optimized kanban spacing */
+  .compact-kanban {
+    gap: var(--kanban-gap);
+  }
+  
+  .compact-kanban .kanban-column {
+    padding: var(--spacing-sm);
+    gap: var(--spacing-xs);
+  }
+  
+  .compact-kanban-mobile {
+    gap: var(--spacing-sm);
+  }
+  
+  .compact-kanban-mobile .kanban-column {
+    padding: var(--spacing-xs);
+    gap: var(--spacing-xs);
+  }
+}
+
+/* Mobile-specific form styles */
+@layer components {
+  .mobile-form-item {
+    margin-bottom: 1.5rem;
+  }
+
+  .mobile-form-item .ant-form-item-label {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Enhanced touch targets for mobile */
+  .mobile-form-item .ant-input,
+  .mobile-form-item .ant-input-number,
+  .mobile-form-item .ant-select-selector,
+  .mobile-form-item .ant-picker {
+    min-height: 44px;
+    font-size: 16px; /* Prevents zoom on iOS */
+    border-radius: 8px;
+    border-width: 2px;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-form-item .ant-input:focus,
+  .mobile-form-item .ant-input-number:focus,
+  .mobile-form-item .ant-select-focused .ant-select-selector,
+  .mobile-form-item .ant-picker:focus {
+    border-color: #1890ff;
+    box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+  }
+
+  /* Improved checkbox and radio touch targets */
+  .mobile-form-item .ant-checkbox,
+  .mobile-form-item .ant-radio {
+    transform: scale(1.2);
+    margin-right: 12px;
+  }
+
+  .mobile-form-item .ant-checkbox-wrapper,
+  .mobile-form-item .ant-radio-wrapper {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    padding: 8px 0;
+  }
+
+  /* Enhanced switch for mobile */
+  .mobile-form-item .ant-switch {
+    transform: scale(1.2);
+  }
+
+  /* Textarea improvements */
+  .mobile-form-item .ant-input {
+    resize: vertical;
+    min-height: 44px;
+  }
+
+  /* Select dropdown improvements */
+  .mobile-form-item .ant-select-dropdown {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .mobile-form-item .ant-select-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+  }
+
+  /* Date picker improvements */
+  .mobile-form-item .ant-picker-dropdown {
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Form validation styling */
+  .mobile-form-item .ant-form-item-has-error .ant-input,
+  .mobile-form-item .ant-form-item-has-error .ant-input-number,
+  .mobile-form-item .ant-form-item-has-error .ant-select-selector {
+    border-color: #ff4d4f;
+    box-shadow: 0 0 0 2px rgba(255, 77, 79, 0.1);
+  }
+
+  /* Loading states */
+  .mobile-form-item .ant-input[disabled],
+  .mobile-form-item .ant-input-number[disabled],
+  .mobile-form-item .ant-select-disabled .ant-select-selector {
+    background-color: #f5f5f5;
+    opacity: 0.6;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  /* Increase spacing on mobile */
+  .mobile-form-item {
+    margin-bottom: 2rem;
+  }
+
+  /* Full width inputs on mobile */
+  .ant-form-item-control-input-content > * {
+    width: 100% !important;
+  }
+
+  /* Optimized button spacing on mobile */
+  .ant-btn {
+    min-height: var(--input-height-large);
+    font-size: 16px;
+    border-radius: 8px;
+    padding: 0 var(--spacing-md);
+  }
+  
+  .ant-btn-sm {
+    height: var(--button-height);
+    padding: 0 var(--spacing-sm);
+    font-size: 14px;
+  }
+
+  /* Optimized modal spacing for mobile */
+  .ant-modal {
+    margin: 0;
+    max-width: 100%;
+    top: 0;
+    padding-bottom: 0;
+  }
+
+  .ant-modal-content {
+    border-radius: 16px 16px 0 0;
+    padding: var(--modal-padding-mobile);
+  }
+  
+  .ant-modal-header {
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+    margin-bottom: 0;
+  }
+  
+  .ant-modal-body {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+  }
+  
+  .ant-modal-footer {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+    margin-top: 0;
+  }
+
+  /* Drawer improvements */
+  .ant-drawer-content {
+    border-radius: 16px 16px 0 0;
+  }
+}
+
+/* Safari-specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .mobile-form-item .ant-input,
+  .mobile-form-item .ant-input-number,
+  .mobile-form-item .ant-select-selector,
+  .mobile-form-item .ant-picker {
+    /* Prevent zoom on focus in Safari */
+    font-size: 16px !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .mobile-form-item .ant-input,
+  .mobile-form-item .ant-input-number,
+  .mobile-form-item .ant-select-selector {
+    border-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-form-item .ant-input,
+  .mobile-form-item .ant-input-number,
+  .mobile-form-item .ant-select-selector,
+  .mobile-form-item .ant-picker {
+    transition: none;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .mobile-form-item .ant-input,
+  .mobile-form-item .ant-input-number,
+  .mobile-form-item .ant-select-selector {
+    background-color: #1f1f1f;
+    border-color: #434343;
+    color: #ffffff;
+  }
+
+  .mobile-form-item .ant-input::placeholder {
+    color: #8c8c8c;
+  }
+}
+
+/* Global Ant Design spacing optimizations */
+@layer base {
+  /* Compact card components */
+  .ant-card {
+    border-radius: 8px;
+  }
+  
+  .ant-card-body {
+    padding: var(--card-padding);
+  }
+  
+  .ant-card-meta {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .ant-card-meta-title {
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  /* Compact list components */
+  .ant-list-item {
+    padding: var(--spacing-sm) 0;
+  }
+  
+  .ant-list-item-meta {
+    margin-bottom: var(--spacing-xs);
+  }
+  
+  /* Compact form components */
+  .ant-form-item {
+    margin-bottom: var(--spacing-md);
+  }
+  
+  .ant-form-item-label {
+    padding-bottom: var(--spacing-xs);
+  }
+  
+  /* Compact input components */
+  .ant-input,
+  .ant-input-number,
+  .ant-select-selector {
+    height: var(--input-height);
+    border-radius: 6px;
+  }
+  
+  .ant-input-lg,
+  .ant-input-number-lg,
+  .ant-select-lg .ant-select-selector {
+    height: var(--input-height-large);
+  }
+  
+  /* Compact button components */
+  .ant-btn {
+    height: var(--button-height);
+    padding: 0 var(--spacing-md);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  
+  .ant-btn-lg {
+    height: var(--button-height-large);
+    padding: 0 var(--spacing-lg);
+    font-size: 16px;
+  }
+  
+  .ant-btn-sm {
+    height: 28px;
+    padding: 0 var(--spacing-sm);
+    font-size: 12px;
+  }
+  
+  /* Compact table components */
+  .ant-table-tbody > tr > td {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  .ant-table-thead > tr > th {
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+  
+  /* Compact modal components */
+  .ant-modal-content {
+    border-radius: 12px;
+  }
+  
+  .ant-modal-header {
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-sm);
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+  
+  .ant-modal-body {
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-lg);
+  }
+  
+  .ant-modal-footer {
+    padding: var(--spacing-sm) var(--spacing-lg) var(--spacing-lg);
+    border-top: none;
+    margin-top: 0;
+  }
+  
+  /* Compact drawer components */
+  .ant-drawer-body {
+    padding: var(--spacing-lg);
+  }
+  
+  .ant-drawer-header {
+    padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-sm);
+    border-bottom: none;
+  }
+  
+  /* Compact notification components */
+  .ant-notification {
+    margin-right: var(--spacing-md);
+    margin-top: var(--spacing-md);
+  }
+  
+  .ant-notification-notice {
+    padding: var(--spacing-md);
+    border-radius: 8px;
+  }
+  
+  /* Compact dropdown components */
+  .ant-dropdown {
+    border-radius: 8px;
+  }
+  
+  .ant-dropdown-menu {
+    border-radius: 8px;
+    padding: var(--spacing-xs);
+  }
+  
+  .ant-dropdown-menu-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin: 2px 0;
+    border-radius: 4px;
+  }
+  
+  /* Compact popover components */
+  .ant-popover-content {
+    border-radius: 8px;
+  }
+  
+  .ant-popover-inner {
+    padding: var(--spacing-md);
+  }
+  
+  .ant-popover-title {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-xs);
+    margin: 0;
+  }
+  
+  /* Compact tooltip components */
+  .ant-tooltip-inner {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 4px;
+  }
+}
+
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  .ant-card-body {
+    padding: var(--card-padding-mobile);
+  }
+  
+  .ant-list-item {
+    padding: var(--spacing-xs) 0;
+  }
+  
+  .ant-form-item {
+    margin-bottom: var(--spacing-sm);
+  }
+  
+  .ant-table-tbody > tr > td,
+  .ant-table-thead > tr > th {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+  
+  .ant-modal-header {
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+  }
+  
+  .ant-modal-body {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+  }
+  
+  .ant-modal-footer {
+    padding: var(--spacing-sm) var(--spacing-md) var(--spacing-md);
+  }
+  
+  .ant-drawer-body {
+    padding: var(--spacing-md);
+  }
+  
+  .ant-drawer-header {
+    padding: var(--spacing-md) var(--spacing-md) var(--spacing-sm);
+  }
+}
+
 @theme {
   --color-primary-50: #e6f4ff;
   --color-primary-100: #bae0ff;
@@ -146,16 +731,264 @@
   border-color: var(--color-border);
 }
 
-/* Reset some default styles */
+/* Reset and mobile optimizations */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Enable smooth scrolling */
+  scroll-behavior: smooth;
+  /* Prevent horizontal scroll on mobile */
+  overflow-x: hidden;
+  /* Prevent text size adjustment on iOS */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Enable momentum scrolling on iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   background-color: var(--color-bg);
   color: var(--color-text);
   transition: background-color 0.3s ease, color 0.3s ease;
+  /* Improve tap highlight color */
+  -webkit-tap-highlight-color: rgba(24, 144, 255, 0.1);
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* Safe area handling for notched devices */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
-* {
-  box-sizing: border-box;
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Mobile touch optimizations */
+button, 
+.btn,
+[role="button"],
+input[type="submit"],
+input[type="button"] {
+  /* Minimum touch target size */
+  min-height: 44px;
+  min-width: 44px;
+  /* Remove iOS button styling */
+  -webkit-appearance: none;
+  appearance: none;
+  /* Improve touch feedback */
+  touch-action: manipulation;
+  /* Prevent user selection during tap */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Improve form input behavior on mobile */
+input, 
+textarea, 
+select {
+  /* Prevent zoom on iOS */
+  font-size: 16px;
+  /* Remove iOS input styling */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Remove default focus outline for mouse users */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-auto {
+  will-change: auto;
+}
+
+/* Container query support */
+.container {
+  container-type: inline-size;
+}
+
+/* Safe area utilities */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+.safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile-optimized animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Floating Action Button Animations */
+@keyframes fabActionsSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fabBounce {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+/* FAB Component Styles */
+.fab-container {
+  /* Ensure proper stacking context */
+  contain: layout style;
+}
+
+.fab-main-button {
+  /* Enhance touch target on mobile */
+  -webkit-tap-highlight-color: rgba(24, 144, 255, 0.2);
+  touch-action: manipulation;
+}
+
+.fab-main-button:hover {
+  animation: fabBounce 0.6s ease-in-out;
+}
+
+.fab-action-button {
+  /* Enhance touch target on mobile */
+  -webkit-tap-highlight-color: rgba(24, 144, 255, 0.2);
+  touch-action: manipulation;
+}
+
+/* Safe area adjustments for FAB */
+@supports (bottom: env(safe-area-inset-bottom)) {
+  .fab-container {
+    bottom: calc(env(safe-area-inset-bottom) + 80px);
+    right: calc(env(safe-area-inset-right) + 16px);
+  }
+}
+
+/* High contrast mode support for FAB */
+@media (prefers-contrast: high) {
+  .fab-main-button,
+  .fab-action-button {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .fab-container,
+  .fab-main-button,
+  .fab-action-button {
+    transition-duration: 0s !important;
+    animation: none !important;
+  }
+  
+  *,
+  ::before,
+  ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
 }
 

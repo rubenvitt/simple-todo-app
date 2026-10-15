@@ -5,6 +5,8 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerSchema } from '../../types/validation.schemas';
 import { z } from 'zod';
+import { useMobileDetection } from '../../hooks';
+import { MobileFormField } from '../forms';
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
@@ -37,6 +39,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   loading = false,
   error = null,
 }) => {
+  const { isMobile } = useMobileDetection();
   const {
     control,
     handleSubmit,
@@ -91,108 +94,186 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         autoComplete="off"
         className="space-y-4"
       >
-        <Form.Item
-          label={<span className="text-sm font-medium text-gray-700">Full Name</span>}
-          validateStatus={errors.name ? 'error' : ''}
-          help={errors.name?.message}
-          className="mb-4"
-        >
-          <Controller
-            name="name"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                prefix={<UserOutlined className="text-gray-400" />}
-                placeholder="Enter your full name"
-                size="large"
-                autoComplete="name"
-                className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
-              />
-            )}
-          />
-        </Form.Item>
+        {isMobile ? (
+          <>
+            <MobileFormField
+              name="name"
+              control={control}
+              type="text"
+              label={<span className="text-sm font-medium text-gray-700">Full Name</span>}
+              required
+              autoFocus
+              autoComplete="name"
+              inputProps={{
+                prefix: <UserOutlined className="text-gray-400" />,
+                placeholder: "Enter your full name",
+              }}
+              className="mb-4"
+            />
 
-        <Form.Item
-          label={<span className="text-sm font-medium text-gray-700">Email</span>}
-          validateStatus={errors.email ? 'error' : ''}
-          help={errors.email?.message}
-          className="mb-4"
-        >
-          <Controller
-            name="email"
-            control={control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                prefix={<MailOutlined className="text-gray-400" />}
-                placeholder="Enter your email"
-                size="large"
-                type="email"
-                autoComplete="email"
-                className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
-              />
-            )}
-          />
-        </Form.Item>
+            <MobileFormField
+              name="email"
+              control={control}
+              type="email"
+              label={<span className="text-sm font-medium text-gray-700">Email</span>}
+              required
+              autoComplete="email"
+              inputProps={{
+                prefix: <MailOutlined className="text-gray-400" />,
+                placeholder: "Enter your email",
+              }}
+              className="mb-4"
+            />
 
-        <Form.Item
-          label={<span className="text-sm font-medium text-gray-700">Password</span>}
-          validateStatus={errors.password ? 'error' : ''}
-          help={errors.password?.message}
-          className="mb-4"
-        >
-          <Controller
-            name="password"
-            control={control}
-            render={({ field }) => (
-              <Input.Password
-                {...field}
-                prefix={<LockOutlined className="text-gray-400" />}
-                placeholder="Create a strong password"
-                size="large"
-                autoComplete="new-password"
-                className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
-              />
+            <MobileFormField
+              name="password"
+              control={control}
+              type="password"
+              label={<span className="text-sm font-medium text-gray-700">Password</span>}
+              required
+              showPasswordStrength
+              inputProps={{
+                prefix: <LockOutlined className="text-gray-400" />,
+                placeholder: "Create a strong password",
+              }}
+              className="mb-4"
+            />
+            {password && (
+              <div className="mt-2 mb-4">
+                <Text type="secondary" className="text-xs">
+                  Password strength:
+                </Text>
+                <Progress
+                  percent={passwordStrength}
+                  size="small"
+                  strokeColor={getPasswordStrengthColor(passwordStrength)}
+                  showInfo={false}
+                  className="mt-1"
+                />
+              </div>
             )}
-          />
-          {password && (
-            <div className="mt-2">
-              <Text type="secondary" className="text-xs">
-                Password strength:
-              </Text>
-              <Progress
-                percent={passwordStrength}
-                size="small"
-                strokeColor={getPasswordStrengthColor(passwordStrength)}
-                showInfo={false}
-                className="mt-1"
+          </>
+        ) : (
+          <>
+            <Form.Item
+              label={<span className="text-sm font-medium text-gray-700">Full Name</span>}
+              validateStatus={errors.name ? 'error' : ''}
+              help={errors.name?.message}
+              className="mb-4"
+            >
+              <Controller
+                name="name"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    prefix={<UserOutlined className="text-gray-400" />}
+                    placeholder="Enter your full name"
+                    size="large"
+                    autoComplete="name"
+                    className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
+                  />
+                )}
               />
-            </div>
-          )}
-        </Form.Item>
+            </Form.Item>
 
-        <Form.Item
-          label={<span className="text-sm font-medium text-gray-700">Confirm Password</span>}
-          validateStatus={errors.confirmPassword ? 'error' : ''}
-          help={errors.confirmPassword?.message}
-          className="mb-6"
-        >
-          <Controller
+            <Form.Item
+              label={<span className="text-sm font-medium text-gray-700">Email</span>}
+              validateStatus={errors.email ? 'error' : ''}
+              help={errors.email?.message}
+              className="mb-4"
+            >
+              <Controller
+                name="email"
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    {...field}
+                    prefix={<MailOutlined className="text-gray-400" />}
+                    placeholder="Enter your email"
+                    size="large"
+                    type="email"
+                    autoComplete="email"
+                    className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
+                  />
+                )}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label={<span className="text-sm font-medium text-gray-700">Password</span>}
+              validateStatus={errors.password ? 'error' : ''}
+              help={errors.password?.message}
+              className="mb-4"
+            >
+              <Controller
+                name="password"
+                control={control}
+                render={({ field }) => (
+                  <Input.Password
+                    {...field}
+                    prefix={<LockOutlined className="text-gray-400" />}
+                    placeholder="Create a strong password"
+                    size="large"
+                    autoComplete="new-password"
+                    className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
+                  />
+                )}
+              />
+              {password && (
+                <div className="mt-2">
+                  <Text type="secondary" className="text-xs">
+                    Password strength:
+                  </Text>
+                  <Progress
+                    percent={passwordStrength}
+                    size="small"
+                    strokeColor={getPasswordStrengthColor(passwordStrength)}
+                    showInfo={false}
+                    className="mt-1"
+                  />
+                </div>
+              )}
+            </Form.Item>
+          </>
+        )}
+
+        {isMobile ? (
+          <MobileFormField
             name="confirmPassword"
             control={control}
-            render={({ field }) => (
-              <Input.Password
-                {...field}
-                prefix={<LockOutlined className="text-gray-400" />}
-                placeholder="Confirm your password"
-                size="large"
-                autoComplete="new-password"
-                className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
-              />
-            )}
+            type="password"
+            label={<span className="text-sm font-medium text-gray-700">Confirm Password</span>}
+            required
+            inputProps={{
+              prefix: <LockOutlined className="text-gray-400" />,
+              placeholder: "Confirm your password",
+            }}
+            className="mb-6"
           />
-        </Form.Item>
+        ) : (
+          <Form.Item
+            label={<span className="text-sm font-medium text-gray-700">Confirm Password</span>}
+            validateStatus={errors.confirmPassword ? 'error' : ''}
+            help={errors.confirmPassword?.message}
+            className="mb-6"
+          >
+            <Controller
+              name="confirmPassword"
+              control={control}
+              render={({ field }) => (
+                <Input.Password
+                  {...field}
+                  prefix={<LockOutlined className="text-gray-400" />}
+                  placeholder="Confirm your password"
+                  size="large"
+                  autoComplete="new-password"
+                  className="rounded-lg border-gray-300 focus:border-blue-500 transition-colors"
+                />
+              )}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item className="mb-0">
           <Button

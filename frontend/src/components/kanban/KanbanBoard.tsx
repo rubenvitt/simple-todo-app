@@ -137,7 +137,15 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-full">
+      <div className="h-full w-full flex flex-col">
+        <div className="
+          kanban-board-scroll
+          flex-1 min-h-0 
+          flex gap-4 p-4
+          overflow-x-auto
+          snap-x snap-mandatory
+          min-[1280px]:grid min-[1280px]:grid-cols-3 min-[1280px]:overflow-x-visible
+          ">
         {TASK_STATUSES.map(({ status, title, color }) => {
           const columnTasks = getTasksByStatus(status);
           return (
@@ -156,6 +164,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             </SortableContext>
           );
         })}
+        </div>
       </div>
 
       <DragOverlay>

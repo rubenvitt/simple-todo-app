@@ -15,7 +15,9 @@ import {
   PlusOutlined, 
   SearchOutlined, 
   ReloadOutlined,
-  ShareAltOutlined
+  ShareAltOutlined,
+  EditOutlined,
+  FilterOutlined
 } from '@ant-design/icons';
 import { 
   useTasks, 
@@ -27,10 +29,14 @@ import {
   PermissionGuard,
   useCreateTask,
   useUpdateTask,
-  useDeleteTask
+  useDeleteTask,
+  useListPullToRefresh
 } from '../hooks';
-import { ShareModal, TaskModal } from '../components';
-import { PermissionAwareKanbanBoard } from '../components/kanban';
+import { ShareModalLazy, TaskModalLazy } from '../components/LazyComponents';
+import { ResponsiveKanbanBoard } from '../components/kanban';
+import { TaskBottomSheet, useTaskBottomSheet, PullToRefreshIndicator, FloatingActionButton, type FloatingAction } from '../components/ui';
+import { QuickTaskCreator } from '../components/forms';
+import { useResponsiveKanban } from '../hooks/useResponsiveKanban';
 import { TaskStatus, TaskPriority, PermissionLevel } from '@simple-todo-app/shared';
 
 const { Title } = Typography;
@@ -57,12 +63,36 @@ const ListDetail = () => {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [editingTask, setEditingTask] = useState<any>(null);
+  
+  // Mobile/Desktop detection and bottom sheet
+  const { isMobile } = useResponsiveKanban();
+  const taskBottomSheet = useTaskBottomSheet();
+  
+  // Filter panel state for mobile
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // Fetch auth and list data
   const { user } = useAuth();
   const { data: list, isLoading: listLoading, error: listError } = useList(id!);
   const { data: tasks = [], isLoading: tasksLoading, error: tasksError, refetch } = useTasks(id!);
   const permissions = usePermissions({ listId: id! });
+
+  const isLoading = listLoading || tasksLoading;
+  const error = listError || tasksError;
+
+  // Pull-to-refresh for mobile
+  const pullToRefresh = useListPullToRefresh(
+    async () => {
+      await Promise.all([
+        refetch(),
+        // Add a small delay for better UX
+        new Promise(resolve => setTimeout(resolve, 500)),
+      ]);
+    },
+    {
+      disabled: !isMobile || isLoading,
+    }
+  );
   
   // Mutations
   const updateTaskStatus = useUpdateTaskStatus();
@@ -70,9 +100,6 @@ const ListDetail = () => {
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
-
-  const isLoading = listLoading || tasksLoading;
-  const error = listError || tasksError;
 
   // Debug: Check what tasks actually is
   console.log('Tasks data:', tasks, 'Type:', typeof tasks, 'Is Array:', Array.isArray(tasks));
@@ -129,8 +156,13 @@ const ListDetail = () => {
       message.warning('Sie haben keine Berechtigung, Aufgaben zu erstellen 🔒');
       return;
     }
-    setEditingTask(null);
-    setShowTaskModal(true);
+    
+    if (isMobile) {
+      taskBottomSheet.openCreateTask();
+    } else {
+      setEditingTask(null);
+      setShowTaskModal(true);
+    }
   };
 
   const handleEditTask = (taskId: string) => {
@@ -140,8 +172,12 @@ const ListDetail = () => {
     }
     const task = tasks.find((t: any) => t.id === taskId);
     if (task) {
-      setEditingTask(task);
-      setShowTaskModal(true);
+      if (isMobile) {
+        taskBottomSheet.openEditTask(task);
+      } else {
+        setEditingTask(task);
+        setShowTaskModal(true);
+      }
     }
   };
 
@@ -196,15 +232,67 @@ const ListDetail = () => {
       setEditingTask(null);
     } catch (error) {
       console.error('Error submitting task:', error);
-      console.error('Full error:', error?.response?.data || error);
+      console.error('Full error:', (error as any)?.response?.data || error);
       message.error('Fehler beim Speichern der Aufgabe 😞');
     }
+  };
+
+  // Quick task creation handler
+  const handleQuickTaskCreate = async (data: { title: string; priority: TaskPriority }) => {
+    if (!permissions.canEdit) {
+      message.warning('Sie haben keine Berechtigung, Aufgaben zu erstellen 🔒');
+      throw new Error('No permission');
+    }
+
+    await createTask.mutateAsync({
+      listId: id!,
+      title: data.title,
+      priority: data.priority,
+      description: '', // Empty description for quick tasks
+    });
   };
 
   const handleTaskModalClose = () => {
     setShowTaskModal(false);
     setEditingTask(null);
   };
+
+  // Floating Action Button actions for mobile
+  const fabActions: FloatingAction[] = permissions.canEdit ? [
+    {
+      key: 'create-task',
+      label: 'Neue Aufgabe',
+      icon: <PlusOutlined />,
+      onClick: handleCreateTask,
+    },
+    ...(permissions.canShare ? [{
+      key: 'share-list',
+      label: 'Liste teilen',
+      icon: <ShareAltOutlined />,
+      onClick: () => setShowShareModal(true),
+    }] : []),
+    {
+      key: 'filter',
+      label: 'Filter',
+      icon: <FilterOutlined />,
+      onClick: () => setShowMobileFilters(!showMobileFilters),
+    },
+    {
+      key: 'refresh',
+      label: 'Aktualisieren',
+      icon: <ReloadOutlined />,
+      onClick: () => refetch(),
+      disabled: isLoading,
+    },
+  ] : [
+    {
+      key: 'refresh',
+      label: 'Aktualisieren',
+      icon: <ReloadOutlined />,
+      onClick: () => refetch(),
+      disabled: isLoading,
+    },
+  ];
 
   if (error) {
     return (
@@ -225,11 +313,23 @@ const ListDetail = () => {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-w-[1920px] mx-auto">
+      {/* Pull-to-Refresh Indicator */}
+      {isMobile && (
+        <PullToRefreshIndicator
+          pullDistance={pullToRefresh.pullDistance}
+          pullProgress={pullToRefresh.pullProgress}
+          isPulling={pullToRefresh.isPulling}
+          isRefreshing={pullToRefresh.isRefreshing}
+          isThresholdReached={pullToRefresh.isThresholdReached}
+          threshold={pullToRefresh.threshold}
+        />
+      )}
+
       {/* Header */}
-      <div className="border-b bg-white px-6 py-4 shrink-0">
+      <div className="border-b bg-white px-4 md:px-6 py-3 md:py-4 shrink-0">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <Title level={2} className="!mb-2">
               {isLoading ? (
                 <Spin size="small" className="mr-2" />
@@ -249,7 +349,8 @@ const ListDetail = () => {
             )}
           </div>
 
-          <Space wrap>
+          {/* Desktop Actions */}
+          <Space wrap className="hidden lg:flex">
             <PermissionGuard listId={id!} requires="edit">
               <Button 
                 type="primary" 
@@ -280,8 +381,29 @@ const ListDetail = () => {
           </Space>
         </div>
 
-        {/* Filters */}
-        <div className="mt-4 flex flex-col sm:flex-row gap-4">
+        {/* Quick Task Creator - Positioned prominently */}
+        <PermissionGuard listId={id!} requires="edit">
+          <div className="mt-4">
+            <QuickTaskCreator
+              onCreateTask={handleQuickTaskCreate}
+              disabled={isLoading}
+              loading={createTask.isPending}
+              placeholder={
+                isMobile 
+                  ? "Schnell neue Aufgabe..." 
+                  : "Neue Aufgabe schnell erstellen..."
+              }
+              enableHaptics={isMobile}
+            />
+          </div>
+        </PermissionGuard>
+
+        {/* Filters - Hidden on mobile when collapsed */}
+        <div 
+          className={`mt-4 flex flex-col sm:flex-row gap-4 transition-all duration-300 ${
+            isMobile && !showMobileFilters ? 'hidden' : ''
+          }`}
+        >
           <Search
             placeholder="Tasks durchsuchen..."
             allowClear
@@ -330,11 +452,33 @@ const ListDetail = () => {
             )}
           </Space>
         </div>
+
+        {/* Mobile Filter Toggle Button */}
+        {isMobile && (
+          <div className="mt-4">
+            <Button
+              type={showMobileFilters ? 'primary' : 'default'}
+              icon={<FilterOutlined />}
+              onClick={() => setShowMobileFilters(!showMobileFilters)}
+              block
+            >
+              {showMobileFilters ? 'Filter ausblenden' : 'Filter anzeigen'}
+            </Button>
+          </div>
+        )}
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex-1 p-6 overflow-hidden">
-        <PermissionAwareKanbanBoard
+      {/* Responsive Kanban Board */}
+      <div 
+        ref={pullToRefresh.containerRef}
+        {...(isMobile ? pullToRefresh.bind() : {})}
+        className="flex-1 overflow-hidden bg-gray-50"
+        style={{ 
+          touchAction: isMobile ? 'pan-y' : 'auto',
+          overscrollBehaviorY: isMobile ? 'none' : 'auto',
+        }}
+      >
+        <ResponsiveKanbanBoard
           tasks={filteredTasks}
           listId={id!}
           onTaskStatusChange={handleTaskStatusChange}
@@ -342,21 +486,24 @@ const ListDetail = () => {
           onEditTask={handleEditTask}
           onDeleteTask={handleDeleteTask}
           loading={isLoading}
+          showModeToggle={true}
+          enableVirtualScrolling={true}
+          virtualScrollThreshold={3}
         />
       </div>
 
       {/* Share Modal */}
       {showShareModal && list && user && (
-        <ShareModal
+        <ShareModalLazy
           list={list}
           open={showShareModal}
           onClose={() => setShowShareModal(false)}
         />
       )}
 
-      {/* Task Modal */}
-      {showTaskModal && (
-        <TaskModal
+      {/* Task Modal (Desktop) */}
+      {!isMobile && (
+        <TaskModalLazy
           open={showTaskModal}
           onClose={handleTaskModalClose}
           onSubmit={handleTaskSubmit}
@@ -364,6 +511,28 @@ const ListDetail = () => {
           editingTask={editingTask}
           listId={id!}
           loading={createTask.isPending || updateTask.isPending || deleteTask.isPending}
+        />
+      )}
+
+      {/* Task Bottom Sheet (Mobile) */}
+      <TaskBottomSheet
+        open={taskBottomSheet.isOpen}
+        onClose={taskBottomSheet.close}
+        onSubmit={handleTaskSubmit}
+        onDelete={taskBottomSheet.editingTask ? () => handleDeleteTask(taskBottomSheet.editingTask!.id) : undefined}
+        editingTask={taskBottomSheet.editingTask}
+        listId={id!}
+        loading={createTask.isPending || updateTask.isPending || deleteTask.isPending}
+      />
+
+      {/* Floating Action Button - Only on Mobile */}
+      {isMobile && (
+        <FloatingActionButton
+          actions={fabActions}
+          tooltip="Aktionen"
+          hideOnScroll={true}
+          scrollContainerRef={pullToRefresh.containerRef}
+          disabled={isLoading}
         />
       )}
     </div>
